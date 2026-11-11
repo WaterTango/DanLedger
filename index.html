@@ -212,6 +212,15 @@ textarea.n{resize:vertical}
 .sheet .bact .sec{min-height:44px}
 .sheet input[readonly]{background:transparent;border-style:dashed}
 .bcseg button{min-height:44px}
+.qrbox{background:#FFFFFF;border-radius:12px;padding:8px;display:flex;justify-content:center}
+.qrsvg{width:min(280px,80vw);height:auto;display:block}
+.scanbox{position:relative;width:100%;aspect-ratio:1;max-height:50vh;background:#000;border-radius:12px;overflow:hidden}
+.scanbox video{width:100%;height:100%;object-fit:cover;display:block}
+.scanframe{position:absolute;inset:18%;border:3px solid #FFFFFF;border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.scanblk{margin:0;padding:12px;border:1px solid var(--bad);border-radius:12px;font-size:14px}
+.scangal{text-align:center;min-height:44px;display:flex;align-items:center;justify-content:center}
+.sheet .sec{min-height:44px}
+.loginchip{font-weight:500}
 .bccancel{width:100%;min-height:48px;padding:14px;border-radius:10px;font-weight:500}
 .ver{text-align:center;color:var(--mut);font-size:12px;margin:28px 0 0}
 .htop{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -369,7 +378,7 @@ function ago(ts){const m=Math.floor((Date.now()-ts)/60000);if(m<1)return 'just n
 function syncFailed(){return !busy&&!!syncMsg&&!/^(Synced|Syncing)/.test(syncMsg)}
 function syncTop(){
   if(PROFILE!=='personal')return '<span id="synctop"></span>';
-  if(!S.url)return '<div id="synctop" class="acctop"><button class="chip2" data-a="gosync">Connect Google Sheets</button></div>';
+  if(!S.url)return '<div id="synctop" class="acctop"><button class="chip2 loginchip" data-a="gosync" style="'+(thm()==='light'?'background:#1F7A45;border-color:#1F7A45;color:#FFFFFF':'background:#5FD08A;border-color:#5FD08A;color:#06201C')+'">Log in</button></div>';
   const nm=S.sheetName||S.owner||'Google Sheet',st=syncFailed()?'<button class="stop sfail" data-a="gosync"><i class="adot"></i>Sync failed, tap</button>':'<span class="stop lbl">'+(busy?'Syncing…':S.lastAt?'Synced '+ago(S.lastAt)+' · '+when(S.lastAt):'Not synced yet')+'</span>';
   return '<div id="synctop" class="acctop"><button class="chip2 who" data-a="sync" title="'+esc(S.owner||'')+'" aria-label="Sync now. Connected to '+esc(nm)+'">↻ '+esc(nm.slice(0,28))+'</button>'+st+'</div>';
 }
@@ -457,6 +466,7 @@ function render(keep){
   if(!/^\d{4}-\d{2}$/.test(ym))ym=curKey;
   if(view!==lastView&&!popping){try{history.pushState({v:view},'')}catch(e){}}
   if(view==='plan'&&lastView!=='plan')planOpen=false;
+  if(view!=='sync')closeOverlays();
   lastView=view;
   document.body.classList.toggle('demo',PROFILE!=='personal');
   $('#app').innerHTML=topBadge()+(view==='home'?bcSheet():'')+({home:home,add:add,bills:billsView,billform:billForm,plan:planView,goalform:goalForm,sync:syncPage,stats:stats,calc:calcView})[view]();
@@ -562,7 +572,7 @@ function sample(){
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,v=b.dataset.v;
-  if(a==='nav'){bcOpen=false;bcAmt='';clearArm=false;editBud=null;if(view==='add'&&v!=='add'&&draft.edit)draft={type:'expense',amt:'',cat:'Food',note:'',date:today()};view=v;render()}
+  if(a==='nav'){closeOverlays();bcOpen=false;bcAmt='';clearArm=false;editBud=null;if(view==='add'&&v!=='add'&&draft.edit)draft={type:'expense',amt:'',cat:'Food',note:'',date:today()};view=v;render()}
   else if(a==='prev'){ym=shift(ym,-1);render()}
   else if(a==='next'){ym=shift(ym,1);render()}
   else if(a==='type'){draft.type=v;draft.cat=CATS[v][0];draft.goal=0;render()}
@@ -766,14 +776,13 @@ document.addEventListener('click',e=>{
       if(k.length<6){toast('The password must be at least 6 characters');return}
       tk=k;
     }
-    if(!tk){toast('This browser has no password yet. Tap Reconnect and use your connection code');return}
+    if(!tk){toast('This browser has no password yet. Tap Log in and use your connection code');return}
     connectFlow(u,tk);
   }
   else if(a==='smode'){syncMode=v;render(true)}
   else if(a==='connectcode'){
-    let d;
-    try{d=JSON.parse(decodeURIComponent(escape(atob(tmpCode.trim()))));if(!/^https:\/\/script\.google\.com\//.test(d.u)||!d.t||d.t.length<6)throw 0}
-    catch(err){toast('That connection code is not valid');return}
+    const d=decodeCode(tmpCode);
+    if(!d){toast('That connection code is not valid');return}
     connectFlow(d.u,d.t);
   }
   else if(a==='connreplace'){const c=pendConn;if(!c)return;clearData();finishConnect(c.url,c.token,c.pk)}
@@ -787,6 +796,10 @@ document.addEventListener('click',e=>{
   }
   else if(a==='pwlocal'){const pw=tmpNpw.trim();if(pw.length<6){toast('The password must be at least 6 characters');return}S.token=pw;tmpNpw='';saveS();render(true);toast('Password updated on this device');sync()}
   else if(a==='disconnect'){disconnectFlow()}
+  else if(a==='showqr'){showQR()}
+  else if(a==='qrhide'){hideQR()}
+  else if(a==='scanqr'){openScan()}
+  else if(a==='scancancel'){closeScan()}
   else if(a==='resetform'){
 const prev=Object.assign({},draft);
 draft={type:draft.type,amt:'',cat:CATS[draft.type][0],note:'',date:today(),pay:'',goal:0,rep:false};
@@ -1114,7 +1127,7 @@ function payChips(){
 }
 let statsTab='overview',revShow=false;
 const DEMO_VER=9;
-const APP_VER='v14'; // keep in step with sw.js cache ledger-vN
+const APP_VER='v15'; // keep in step with sw.js cache ledger-vN
 function ensureDemo(){
   if(PROFILE==='personal')return;
   let v='';try{v=localStorage.getItem('fin.demo.ver')||''}catch(e){}
@@ -1319,6 +1332,102 @@ function goalChips(){
   return '<p class="lbl" style="margin:0 0 4px">Save toward a goal (optional)</p><div class="chips achips">'+goals.map(g=>cchip('goalpick',g.id,g.name,catCol('Savings'),draft.goal===g.id)).join('')+'</div>'+(draft.goal?'<p class="lbl" style="margin:-4px 0 10px">Counts as savings: it comes off your balance and adds to this goal.</p>':'');
 }
 const SCRIPT_SRC="// Ledger sync (Google Apps Script).\n// Easiest way: in the Ledger app open Sync, tap \"Copy script\", then paste it into a new project at script.google.com.\n// Then Deploy > New deployment > Web app > Who has access: Anyone > Deploy, and paste the Web app URL back into the app.\n// The script creates a Google Sheet called \"Ledger\" in a Drive folder called \"Ledger\": one tab per month, newest first,\n// tabs colored by year, and a Summary tab with each year as a collapsible group.\n\nconst TOKEN = '__TOKEN__';\nconst FOLDER = 'Ledger';\nconst FILE_NAME = '__NAME__';\nconst EMAIL = ''; // leave empty to email your own Google account (bill reminders)\nconst SHEET = 'Entries';\nconst SETTINGS = 'Settings';\nconst MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];\nconst YEAR_COLORS = ['#0B8F7A', '#D98A2B', '#4A7BD0', '#C4547A', '#8A6FD1', '#6B7A2E'];\n\nfunction ss_() {\n  let ss = SpreadsheetApp.getActiveSpreadsheet();\n  if (ss) return ss;\n  const props = PropertiesService.getScriptProperties();\n  const id = props.getProperty('SSID');\n  if (id) { try { return SpreadsheetApp.openById(id); } catch (e) {} }\n  ss = SpreadsheetApp.create(FILE_NAME);\n  props.setProperty('SSID', ss.getId());\n  try { ss.getSheets()[0].setName('Summary'); } catch (e) {}\n  try {\n    const it = DriveApp.getFoldersByName(FOLDER);\n    const f = it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER);\n    DriveApp.getFileById(ss.getId()).moveTo(f);\n  } catch (e) {}\n  return ss;\n}\n\nfunction entries_(ss) {\n  let sh = ss.getSheetByName(SHEET);\n  if (!sh) {\n    sh = ss.insertSheet(SHEET);\n    sh.appendRow(['id', 'date', 'type', 'category', 'amount', 'note', 'deleted', 'updated', 'sv', 'payment', 'goal']);\n    sh.getRange('A:B').setNumberFormat('@');\n    sh.getRange('F:F').setNumberFormat('@');\n    sh.setFrozenRows(1);\n    try { sh.hideSheet(); } catch (e) {}\n  }\n  return sh;\n}\n\n// Bills, budgets, goals, plans, favorites, categories and repeating entries live here as one JSON blob (last write wins).\nfunction cfgSheet_(ss) {\n  let sh = ss.getSheetByName(SETTINGS);\n  if (!sh) {\n    sh = ss.insertSheet(SETTINGS);\n    sh.getRange('A1:A2').setValues([['updated'], ['data']]);\n    sh.getRange('B1:B2').setNumberFormat('@');\n    try { sh.hideSheet(); } catch (e) {}\n  }\n  return sh;\n}\n\nfunction owner_() {\n  try { return Session.getEffectiveUser().getEmail(); } catch (e) { return ''; }\n}\n\nfunction fmtDate_(v, tz) {\n  return v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : String(v);\n}\nfunction mk_(r) { return String(r[1]).slice(0, 7); }\n\nfunction tot_(rows) {\n  let inc = 0, sp = 0, sv = 0;\n  rows.forEach(r => {\n    const a = Number(r[4]);\n    if (r[2] === 'income') inc += a; else if (Number(r[10])) sv += a; else sp += a;\n  });\n  return [inc, sp, sv, inc - sp - sv, rows.length];\n}\n\nfunction monthSheet_(ss, m, rows) {\n  let sh = ss.getSheetByName(m);\n  if (!sh) sh = ss.insertSheet(m);\n  sh.clear();\n  const y = Number(m.slice(0, 4)), mo = Number(m.slice(5));\n  rows = rows.slice().sort((a, b) => String(a[1]).localeCompare(String(b[1])) || Number(a[0]) - Number(b[0]));\n  const t = tot_(rows);\n  const body = rows.map(r => {\n    const a = Number(r[4]), inc = r[2] === 'income';\n    return [r[1], inc ? 'Income' : (Number(r[10]) ? 'Savings' : 'Expense'), r[3], r[5], inc ? a : -a, r[9] || ''];\n  });\n  sh.getRange(1, 1).setValue(MON[mo - 1] + ' ' + y).setFontWeight('bold').setFontSize(14);\n  sh.getRange(2, 1, 2, 5).setValues([['Income', 'Spent', 'Saved to goals', 'Left', 'Entries'], t]);\n  sh.getRange(2, 1, 1, 5).setFontWeight('bold');\n  sh.getRange(3, 1, 1, 4).setNumberFormat('#,##0.00');\n  sh.getRange(5, 1, 1, 6).setValues([['Date', 'Type', 'Category', 'Note', 'Amount (RM)', 'Paid by']]).setFontWeight('bold').setBackground('#E8F3F0');\n  if (body.length) {\n    sh.getRange(6, 1, body.length, 1).setNumberFormat('@');\n    sh.getRange(6, 1, body.length, 6).setValues(body);\n    sh.getRange(6, 5, body.length, 1).setNumberFormat('#,##0.00;[Red]-#,##0.00');\n  }\n  try { sh.setFrozenRows(5); sh.setTabColor(YEAR_COLORS[y % YEAR_COLORS.length]); sh.setColumnWidth(1, 95); sh.setColumnWidth(4, 220); } catch (e) {}\n}\n\nfunction order_(ss) {\n  const names = ss.getSheets().map(s => s.getName()).filter(n => /^\\d{4}-\\d{2}$/.test(n)).sort().reverse();\n  names.forEach((n, i) => {\n    try { ss.setActiveSheet(ss.getSheetByName(n)); ss.moveActiveSheet(i + 2); } catch (e) {}\n  });\n}\n\nfunction summary_(ss, by) {\n  let sh = ss.getSheetByName('Summary');\n  if (!sh) sh = ss.insertSheet('Summary', 0);\n  try { for (let i = 0; i < 2; i++) sh.getRange(1, 1, sh.getMaxRows(), 1).shiftRowGroupDepth(-1); } catch (e) {}\n  sh.clear();\n  const months = Object.keys(by).sort().reverse(), years = {};\n  months.forEach(m => { (years[m.slice(0, 4)] = years[m.slice(0, 4)] || []).push(m); });\n  const yrs = Object.keys(years).sort().reverse();\n  const curYear = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy');\n  const out = [['Year / Month', 'Income', 'Spent', 'Saved to goals', 'Left', 'Entries']];\n  const yearRows = [], monthRows = [], groups = [];\n  yrs.forEach(y => {\n    const yt = [0, 0, 0, 0, 0], list = years[y].map(m => ({ m: m, t: tot_(by[m]) }));\n    list.forEach(x => x.t.forEach((v, i) => { yt[i] += v; }));\n    out.push([y].concat(yt));\n    yearRows.push(out.length);\n    const start = out.length + 1;\n    list.forEach(x => { out.push([MON[Number(x.m.slice(5)) - 1]].concat(x.t)); monthRows.push({ row: out.length, m: x.m }); });\n    if (list.length) groups.push({ start: start, count: list.length, open: y === curYear });\n  });\n  sh.getRange(1, 1, out.length, 6).setValues(out);\n  sh.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#E8F3F0');\n  yearRows.forEach(r => sh.getRange(r, 1, 1, 6).setFontWeight('bold').setBackground('#F3F4F1'));\n  sh.getRange(2, 2, out.length, 4).setNumberFormat('#,##0.00');\n  monthRows.forEach(x => {\n    try { sh.getRange(x.row, 1).setFormula('=HYPERLINK(\"#gid=' + ss.getSheetByName(x.m).getSheetId() + '\",\"' + out[x.row - 1][0] + '\")'); } catch (e) {}\n  });\n  try { sh.setFrozenRows(1); sh.setColumnWidth(1, 150); } catch (e) {}\n  groups.forEach(g => {\n    try {\n      sh.getRange(g.start, 1, g.count, 1).shiftRowGroupDepth(1);\n      if (!g.open) sh.getRowGroup(g.start, 1).collapse();\n    } catch (e) {}\n  });\n}\n\nfunction rebuild_(ss, data, months) {\n  const by = {};\n  data.forEach(r => { if (!Number(r[6]) && /^\\d{4}-\\d{2}/.test(String(r[1]))) (by[mk_(r)] = by[mk_(r)] || []).push(r); });\n  const todo = {};\n  months.forEach(m => { todo[m] = 1; });\n  Object.keys(by).forEach(m => { if (!ss.getSheetByName(m)) todo[m] = 1; });\n  Object.keys(todo).forEach(m => monthSheet_(ss, m, by[m] || []));\n  order_(ss);\n  summary_(ss, by);\n}\n\nfunction doGet() {\n  return ContentService.createTextOutput('Ledger sync is running');\n}\n\nfunction doPost(e) {\n  const out = o => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);\n  let req;\n  try { req = JSON.parse(e.postData.contents); } catch (err) { return out({ ok: false, error: 'Bad request' }); }\n  if (req.token !== TOKEN) return out({ ok: false, error: 'Wrong token' });\n  const lock = LockService.getScriptLock();\n  lock.waitLock(20000);\n  try {\n    const ss = ss_(), sh = entries_(ss), now = Date.now(), tz = Session.getScriptTimeZone();\n    if (req.peek) {\n      // read-only check used when an app connects: lets it decide whether to pull, push or ask first\n      const lr = sh.getLastRow();\n      const flags = lr > 1 ? sh.getRange(2, 7, lr - 1, 1).getValues() : [];\n      const pv = cfgSheet_(ss).getRange('B1').getValue();\n      return out({ ok: true, peek: true, sid: ss.getId(), name: ss.getName(), owner: owner_(), entries: flags.filter(f => !Number(f[0])).length, hasCfg: (Number(pv) || 0) > 0 });\n    }\n    const last = sh.getLastRow();\n    const data = last > 1 ? sh.getRange(2, 1, last - 1, 11).getValues() : [];\n    data.forEach(r => { r[0] = String(r[0]); r[1] = fmtDate_(r[1], tz); });\n    const idx = {}, touched = {};\n    data.forEach((r, i) => { idx[r[0]] = i; });\n    (req.rows || []).forEach(t => {\n      const row = [String(t.id), t.date, t.type, t.cat, t.amt / 100, t.note || '', t.del ? 1 : 0, t.upd, now, t.pay || '', t.goal || 0];\n      const i = idx[String(t.id)];\n      if (i === undefined) { data.push(row); idx[String(t.id)] = data.length - 1; touched[mk_(row)] = 1; }\n      else if (t.upd >= Number(data[i][7])) { touched[mk_(data[i])] = 1; data[i] = row; touched[mk_(row)] = 1; }\n    });\n    if (data.length) sh.getRange(2, 1, data.length, 11).setValues(data);\n    const months = Object.keys(touched).filter(m => /^\\d{4}-\\d{2}$/.test(m));\n    if (months.length || !ss.getSheetByName('Summary')) rebuild_(ss, data, months);\n    const since = Number(req.since) || 0;\n    const rows = data.filter(r => Number(r[8]) >= since).map(r => ({\n      id: Number(r[0]), date: r[1], type: r[2], cat: r[3],\n      amt: Math.round(Number(r[4]) * 100), note: String(r[5]),\n      del: Number(r[6]) ? 1 : 0, upd: Number(r[7]), pay: String(r[9] || ''), goal: Number(r[10]) || 0\n    }));\n\n    const cs = cfgSheet_(ss), cv = cs.getRange('B1:B2').getValues(), cu = Number(cv[0][0]) || 0;\n    let cfg = null, cfgVer = null;\n    // A device may only overwrite the settings if it has seen the latest version (base). A blank or out-of-date device can never wipe them.\n    const accept = req.cfg && (cu === 0 || (req.cfg.base === undefined ? req.cfg.upd > cu : Number(req.cfg.base) === cu));\n    if (accept) {\n      const json = JSON.stringify(req.cfg.data || {});\n      if (json.length > 45000) return out({ ok: false, error: 'Settings too large' });\n      cfgVer = Math.max(Date.now(), cu + 1);\n      cs.getRange('B1:B2').setValues([[String(cfgVer)], [json]]);\n    } else if (cu > 0 && (req.cfg || cu > (Number(req.cfgKnown) || 0))) {\n      cfg = { upd: cu, data: JSON.parse(cv[1][0] || '{}') };\n    }\n    return out({ ok: true, rows: rows, cursor: now, cfg: cfg, cfgVer: cfgVer, sid: ss.getId(), url: ss.getUrl(), name: ss.getName(), owner: owner_() });\n  } finally {\n    lock.releaseLock();\n  }\n}\n\n// Daily email for bills that are overdue or due within 3 days. Add a time-driven trigger for this function.\nfunction sendBillReminders() {\n  const raw = cfgSheet_(ss_()).getRange('B2').getValue();\n  if (!raw || raw === 'data') return;\n  const bills = (JSON.parse(raw).bills) || [];\n  const tz = Session.getScriptTimeZone(), now = new Date();\n  const k = Utilities.formatDate(now, tz, 'yyyy-MM');\n  const td = Number(Utilities.formatDate(now, tz, 'd'));\n  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();\n  const lines = [];\n  bills.forEach(b => {\n    if (b.paid && b.paid[k]) return;\n    if ((b.from && k < b.from) || (b.to && k > b.to)) return;\n    const d = Math.min(b.day, dim) - td;\n    if (d > 3) return;\n    lines.push('- ' + b.name + ': RM ' + (b.amt / 100).toFixed(2) + (d < 0 ? ' (overdue)' : d === 0 ? ' (due today)' : ' (due in ' + d + ' days)'));\n  });\n  if (!lines.length) return;\n  MailApp.sendEmail(EMAIL || Session.getEffectiveUser().getEmail(), 'Bills due soon', lines.join('\\n'));\n}\n";
+// Minimal QR encoder: byte mode, ECC level M, auto version 1-40, auto mask. Returns {size, get(x,y)} . Based on the public QR spec (ISO/IEC 18004).
+const QRM=(()=>{
+  const ECC=[-1,10,16,26,18,24,16,18,22,22,26,30,22,22,24,24,28,28,26,26,26,26,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28];
+  const BLK=[-1,1,1,1,2,2,4,4,4,5,5,5,8,9,9,10,10,11,13,14,16,17,17,18,20,21,23,25,26,28,29,31,33,35,37,38,40,43,45,47,49];
+  const raw=v=>{let r=(16*v+128)*v+64;if(v>=2){const n=Math.floor(v/7)+2;r-=(25*n-10)*n-55;if(v>=7)r-=36}return r};
+  const dataCw=v=>Math.floor(raw(v)/8)-ECC[v]*BLK[v];
+  const mul=(x,y)=>{let z=0;for(let i=7;i>=0;i--){z=(z<<1)^((z>>>7)*0x11D);z^=((y>>>i)&1)*x}return z&255};
+  const rsDiv=d=>{const r=new Array(d).fill(0);r[d-1]=1;let root=1;for(let i=0;i<d;i++){for(let j=0;j<d;j++){r[j]=mul(r[j],root);if(j+1<d)r[j]^=r[j+1]}root=mul(root,2)}return r};
+  const rsRem=(data,div)=>{const r=div.map(()=>0);for(const b of data){const f=b^r.shift();r.push(0);div.forEach((c,i)=>{r[i]^=mul(c,f)})}return r};
+  const bit=(x,i)=>((x>>>i)&1)!==0;
+  function encode(text){
+    const bytes=Array.from(new TextEncoder().encode(text));
+    let v=1;for(;v<=40;v++){const cc=v<10?8:16;if(4+cc+bytes.length*8<=dataCw(v)*8)break}
+    if(v>40)throw new Error('Data too long for a QR code');
+    const cc=v<10?8:16,bb=[],push=(val,n)=>{for(let i=n-1;i>=0;i--)bb.push((val>>>i)&1)};
+    push(4,4);push(bytes.length,cc);bytes.forEach(b=>push(b,8));
+    const cap=dataCw(v)*8;push(0,Math.min(4,cap-bb.length));push(0,(8-bb.length%8)%8);
+    for(let p=0xEC;bb.length<cap;p^=0xEC^0x11)push(p,8);
+    const data=[];for(let i=0;i<bb.length;i+=8){let x=0;for(let j=0;j<8;j++)x=(x<<1)|bb[i+j];data.push(x)}
+    // ECC + interleave
+    const nb=BLK[v],el=ECC[v],rc=Math.floor(raw(v)/8),ns=nb-rc%nb,sl=Math.floor(rc/nb),div=rsDiv(el),blocks=[];
+    for(let i=0,k=0;i<nb;i++){const d=data.slice(k,k+sl-el+(i<ns?0:1));k+=d.length;const e=rsRem(d,div);if(i<ns)d.push(0);blocks.push(d.concat(e))}
+    const all=[];for(let i=0;i<blocks[0].length;i++)blocks.forEach((b,j)=>{if(i!==sl-el||j>=ns)all.push(b[i])});
+    // matrix
+    const size=v*4+17,M=[],F=[];for(let y=0;y<size;y++){M.push(new Array(size).fill(false));F.push(new Array(size).fill(false))}
+    const fn=(x,y,d)=>{M[y][x]=d;F[y][x]=true};
+    for(let i=0;i<size;i++){fn(6,i,i%2===0);fn(i,6,i%2===0)}
+    const finder=(cx,cy)=>{for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++){const d=Math.max(Math.abs(dx),Math.abs(dy)),x=cx+dx,y=cy+dy;if(x>=0&&x<size&&y>=0&&y<size)fn(x,y,d!==2&&d!==4)}};
+    finder(3,3);finder(size-4,3);finder(3,size-4);
+    if(v>1){const n=Math.floor(v/7)+2,step=Math.floor((v*8+n*3+5)/(n*4-4))*2,pos=[6];for(let p=size-7;pos.length<n;p-=step)pos.splice(1,0,p);
+      for(let i=0;i<n;i++)for(let j=0;j<n;j++){if((i===0&&j===0)||(i===0&&j===n-1)||(i===n-1&&j===0))continue;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)fn(pos[i]+dx,pos[j]+dy,Math.max(Math.abs(dx),Math.abs(dy))!==1)}}
+    const fmt=mask=>{const d=(0<<3)|mask;let r=d;for(let i=0;i<10;i++)r=(r<<1)^((r>>>9)*0x537);const b=((d<<10)|r)^0x5412;
+      for(let i=0;i<=5;i++)fn(8,i,bit(b,i));fn(8,7,bit(b,6));fn(8,8,bit(b,7));fn(7,8,bit(b,8));for(let i=9;i<15;i++)fn(14-i,8,bit(b,i));
+      for(let i=0;i<8;i++)fn(size-1-i,8,bit(b,i));for(let i=8;i<15;i++)fn(8,size-15+i,bit(b,i));fn(8,size-8,true)};
+    fmt(0);
+    if(v>=7){let r=v;for(let i=0;i<12;i++)r=(r<<1)^((r>>>11)*0x1F25);const b=(v<<12)|r;for(let i=0;i<18;i++){const a=size-11+i%3,c=Math.floor(i/3);fn(a,c,bit(b,i));fn(c,a,bit(b,i))}}
+    let i=0;for(let right=size-1;right>=1;right-=2){if(right===6)right=5;for(let vert=0;vert<size;vert++)for(let j=0;j<2;j++){const x=right-j,up=((right+1)&2)===0,y=up?size-1-vert:vert;if(!F[y][x]&&i<all.length*8){M[y][x]=bit(all[i>>>3],7-(i&7));i++}}}
+    const inv=(m,x,y)=>[(x+y)%2===0,y%2===0,x%3===0,(x+y)%3===0,(Math.floor(x/3)+Math.floor(y/2))%2===0,x*y%2+x*y%3===0,(x*y%2+x*y%3)%2===0,((x+y)%2+x*y%3)%2===0][m];
+    const apply=m=>{for(let y=0;y<size;y++)for(let x=0;x<size;x++)if(!F[y][x]&&inv(m,x,y))M[y][x]=!M[y][x]};
+    const penalty=()=>{let p=0,dark=0;
+      for(let y=0;y<size;y++){let run=1;for(let x=1;x<=size;x++){if(x<size&&M[y][x]===M[y][x-1])run++;else{if(run>=5)p+=run-2;run=1}}}
+      for(let x=0;x<size;x++){let run=1;for(let y=1;y<=size;y++){if(y<size&&M[y][x]===M[y-1][x])run++;else{if(run>=5)p+=run-2;run=1}}}
+      for(let y=0;y<size-1;y++)for(let x=0;x<size-1;x++){const c=M[y][x];if(c===M[y][x+1]&&c===M[y+1][x]&&c===M[y+1][x+1])p+=3}
+      for(let y=0;y<size;y++)for(let x=0;x<size;x++)if(M[y][x])dark++;
+      const t=size*size;p+=(Math.ceil(Math.abs(dark*20-t*10)/t)-1)*10;return p};
+    let best=0,bp=Infinity;for(let m=0;m<8;m++){apply(m);fmt(m);const pp=penalty();if(pp<bp){bp=pp;best=m}apply(m)}
+    apply(best);fmt(best);
+    return {size:size,version:v,mask:best,get:(x,y)=>M[y][x]};
+  }
+  function svg(text,border){border=border==null?4:border;const q=encode(text),n=q.size+border*2;let d='';
+    for(let y=0;y<q.size;y++)for(let x=0;x<q.size;x++)if(q.get(x,y))d+='M'+(x+border)+','+(y+border)+'h1v1h-1z';
+    return '<svg class="qrsvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+n+' '+n+'" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="'+n+'" height="'+n+'" fill="#FFFFFF"/><path d="'+d+'" fill="#000000"/></svg>'}
+  return {encode:encode,svg:svg};
+})();
+function extractCode(t){t=String(t==null?'':t).trim();const i=t.indexOf('#c=');return i>=0?t.slice(i+3):t}
+function decodeCode(c){try{c=String(c||'').trim();try{c=decodeURIComponent(c)}catch(e){}const d=JSON.parse(decodeURIComponent(escape(atob(c))));if(!d||typeof d.u!=='string'||!/^https:\/\/script\.google\.com\//.test(d.u)||!d.t||String(d.t).length<6)return null;return {u:d.u,t:String(d.t)}}catch(e){return null}}
+let qrT=null,scan=null;
+function hideQR(){if(qrT){clearInterval(qrT);qrT=null}const e=document.getElementById('qrsheet');if(e)e.remove()}
+function showQR(){
+  hideQR();if(PROFILE!=='personal'||!S.url||!S.token)return;
+  const link=location.href.split('#')[0]+'#c='+connCode();let n=60;
+  document.body.insertAdjacentHTML('beforeend','<div class="shwrap" id="qrsheet"><div class="shbg" data-a="qrhide"></div><div class="sheet" role="dialog" aria-label="Connect another device"><h2 style="margin:0">Connect another device</h2><div class="qrbox">'+QRM.svg(link)+'</div><p class="lbl" style="margin:0">Anyone who scans this can open your Sheet. Only show it to the person you are setting up.</p><p class="lbl" id="qrcount" style="margin:0">Hides in 60 s</p><button class="sec" data-a="qrhide">Hide</button></div></div>');
+  qrT=setInterval(()=>{n--;if(n<=0){hideQR();return}const c=document.getElementById('qrcount');if(c)c.textContent='Hides in '+n+' s'},1000);
+}
+function stopCam(){if(!scan)return;if(scan.stream)scan.stream.getTracks().forEach(t=>{try{t.stop()}catch(e){}});clearInterval(scan.timer);clearTimeout(scan.to);scan=null}
+function closeScan(){stopCam();const e=document.getElementById('scansheet');if(e)e.remove()}
+function closeOverlays(){hideQR();closeScan()}
+function scanBlocked(){const bx=document.getElementById('scanbox');if(bx)bx.outerHTML='<p class="scanblk">Camera is blocked. Allow the camera for this site in Chrome, or choose the QR picture from your gallery, or use Option B or C.</p>'}
+function scanHit(text){const d=decodeCode(extractCode(text));if(!d){toast('That connection code is not valid');return false}closeScan();connectFlow(d.u,d.t);return true}
+function openScan(){
+  closeScan();if(!('BarcodeDetector' in window))return;
+  document.body.insertAdjacentHTML('beforeend','<div class="shwrap" id="scansheet"><div class="shbg" data-a="scancancel"></div><div class="sheet" role="dialog" aria-label="Scan QR"><h2 style="margin:0">Scan QR</h2><div class="scanbox" id="scanbox"><video id="scanvid" playsinline muted autoplay></video><i class="scanframe" aria-hidden="true"></i></div><p class="lbl" style="margin:0">Point the camera at the QR from your admin.</p><label class="sec filebtn scangal">Choose from gallery<input id="scanfile" type="file" accept="image/*" hidden></label><button class="sec" data-a="scancancel">Cancel</button></div></div>');
+  let det;try{det=new BarcodeDetector({formats:['qr_code']})}catch(e){det=null}
+  const s=scan={det:det};
+  s.to=setTimeout(()=>{if(scan===s){closeScan();toast('Scan timed out')}},60000);
+  if(!det||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){scanBlocked();return}
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false}).then(st=>{
+    if(scan!==s){st.getTracks().forEach(t=>t.stop());return}
+    s.stream=st;const v=document.getElementById('scanvid');if(!v){stopCam();return}v.srcObject=st;try{const pr=v.play();if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}
+    s.timer=setInterval(()=>{if(scan!==s||s.busy||v.readyState<2)return;s.busy=true;s.det.detect(v).then(c=>{s.busy=false;if(scan===s&&c&&c.length)scanHit(c[0].rawValue)}).catch(()=>{s.busy=false})},250);
+  }).catch(()=>{if(scan===s)scanBlocked()});
+}
+function scanFile(input){
+  const f=input.files&&input.files[0],s=scan;input.value='';
+  if(!f||!s||!s.det)return;
+  createImageBitmap(f).then(bmp=>s.det.detect(bmp).then(c=>{try{bmp.close()}catch(e){}if(scan!==s)return;if(c&&c.length)scanHit(c[0].rawValue);else toast('No QR found in that picture')},()=>{try{bmp.close()}catch(e){}toast('No QR found in that picture')})).catch(()=>toast('No QR found in that picture'));
+}
+function hashConnect(){
+  const h=location.hash||'';if(h.indexOf('#c=')!==0)return;
+  const code=h.slice(3);try{history.replaceState(history.state,'',location.href.split('#')[0])}catch(e){}
+  if(PROFILE!=='personal')return;
+  if(S.url){toast('This device is already connected. Log out first to use a new code.');return}
+  const d=decodeCode(code);if(!d){toast('That connection code is not valid');return}
+  view='sync';render();connectFlow(d.u,d.t);
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)closeOverlays()});
 let tmpName='',tmpUrl='',tmpCode='',tmpKey='',tmpPw='',tmpNpw='',pwShow=false,syncMode='re',scriptShow=false,codeShow=false,discArm=false;
 function randTok(){let a='';const c='abcdefghijklmnopqrstuvwxyz0123456789';try{const u=new Uint8Array(24);crypto.getRandomValues(u);u.forEach(x=>{a+=c[x%c.length]})}catch(e){a='';for(let i=0;i<24;i++)a+=c[Math.floor(Math.random()*c.length)]}return a}
 function esq(x){return String(x).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ')}
@@ -1336,10 +1445,10 @@ function topBadge(){return (PROFILE==='personal'&&S.url&&view!=='home'&&view!=='
 function syncBar(){return syncTop()}
 function syncUI(){
   if(PROFILE!=='personal')return '';
-  return '<h2>Google Sheets sync</h2><button class="sec" data-a="gosync">'+(S.url?'Sync settings':'Connect')+'</button><p class="lbl" id="syncmsg" style="margin:6px 0 0">'+esc(S.url?syncLabel():'Not set up')+'</p>';
+  return '<h2>Google Sheets sync</h2><button class="sec" data-a="gosync">'+(S.url?'Sync settings':'Log in')+'</button><p class="lbl" id="syncmsg" style="margin:6px 0 0">'+esc(S.url?syncLabel():'Not set up')+'</p>';
 }
 function syncPage(){
-  let h='<h1 class="ttl">Google Sheets sync</h1>';
+  let h='<h1 class="ttl">'+(PROFILE==='personal'&&!S.url?'Log in':'Google Sheets sync')+'</h1>';
   if(PROFILE!=='personal')return h+'<p class="lbl">Sync is only for the Personal profile.</p>';
   if(!S.url&&pendConn){
     h+='<div class="stepc"><b>This device already has data</b><p class="lbl" style="margin:4px 0 8px">This device has '+pendConn.localN+' entries. The Google Sheet “'+esc(pendConn.pk.name||'Ledger')+'” already has '+pendConn.pk.entries+'. What should happen?</p><button class="pri" data-a="connreplace">Use the Sheet’s data (replace this device)</button><button class="sec" style="margin-top:8px" data-a="connmerge">Merge entries (settings come from the Sheet)</button><button class="sec" style="margin-top:8px" data-a="conncancel">Cancel</button><p class="lbl" style="margin:8px 0 0">Unsure? Cancel, download a backup in Stats, then come back.</p></div>';
@@ -1347,14 +1456,15 @@ function syncPage(){
   }
   if(!S.url){
     if(connMsg)h+='<div class="stepc"><b class="bad">Update needed</b><p class="lbl" style="margin:4px 0 0">'+esc(connMsg)+'</p></div>';
-    h+='<div class="seg" style="margin:0 0 4px"><button data-a="smode" data-v="re" aria-pressed="'+(syncMode==='re')+'">Reconnect</button><button data-a="smode" data-v="first" aria-pressed="'+(syncMode==='first')+'">First-time setup</button></div>';
+    h+='<div class="seg" style="margin:0 0 4px"><button data-a="smode" data-v="re" aria-pressed="'+(syncMode==='re')+'">Log in</button><button data-a="smode" data-v="first" aria-pressed="'+(syncMode==='first')+'">Set up (admin)</button></div>';
     if(syncMode==='re'){
       h+='<p class="lbl" style="margin:8px 0 0">Use this if you already deployed a script, for example on another device or browser. Do not copy the script again unless you are changing the password on purpose.</p>';
-      h+='<div class="stepc"><b>Option A: connection code</b><p class="lbl" style="margin:4px 0 8px">Open Sync settings on a device that is already connected and tap Copy connection code.</p><input id="scode" placeholder="Connection code" value="'+esc(tmpCode)+'"><button class="pri" style="margin-top:8px" data-a="connectcode">Connect with code</button></div>';
+      h+='<div class="stepc"><b>Option A: QR</b><p class="lbl" style="margin:4px 0 8px">Ask the admin to send you the QR picture, then tap Scan QR, or choose it from your gallery.</p>'+('BarcodeDetector' in window?'<button class="pri" data-a="scanqr">Scan QR</button>':'<p class="lbl" style="margin:0">This phone can\'t scan inside the app. Use your phone camera app on the QR instead.</p>')+'<p class="lbl" style="margin:8px 0 0">No scan button? Use your phone camera app on the QR. It opens this app and connects.</p><p class="lbl" style="margin:4px 0 0">Install the app first (Chrome menu, Install app), then scan.</p></div>';
       h+='<div class="stepc"><b>Option B: URL and password</b><p class="lbl" style="margin:4px 0 8px">The URL is under Deploy, then Manage deployments in your script. The password is the text inside the quotes on the TOKEN line at the top of the script.</p><input id="surl" type="url" placeholder="https://script.google.com/macros/s/…/exec" value="'+esc(tmpUrl)+'"><input id="skey" placeholder="Password" style="margin-top:8px" value="'+esc(tmpKey)+'"><button class="pri" style="margin-top:8px" data-a="connect">Connect and sync</button></div>';
+      h+='<div class="stepc"><b>Option C: connection code</b><p class="lbl" style="margin:4px 0 8px">Open Sync settings on a device that is already connected and tap Copy connection code.</p><input id="scode" placeholder="Connection code" value="'+esc(tmpCode)+'"><button class="pri" style="margin-top:8px" data-a="connectcode">Connect with code</button></div>';
       return h;
     }
-    h+='<p class="lbl" style="margin:8px 0 0">Keeps one Google Sheet in your Drive up to date, with a tab for every month grouped by year. Your phone and PC then always show the same data. Setup takes about 3 minutes, once. Already did this before? Tap Reconnect.</p>';
+    h+='<p class="lbl" style="margin:8px 0 0">Keeps one Google Sheet in your Drive up to date, with a tab for every month grouped by year. Your phone and PC then always show the same data. Setup takes about 3 minutes, once. Already did this before? Tap Log in.</p>';
     h+='<div class="stepc"><b>1. Choose a password and copy the script</b><p class="lbl" style="margin:4px 0 8px">Pick any password you like (at least 6 characters), or leave it empty for a random one. Only for the very first setup. If you change the password later, copy the script again and replace the old code.</p><input id="spw" placeholder="Password (optional)" value="'+esc(tmpPw)+'"><input id="sname" placeholder="Sheet name (optional), like Ledger - Ben" style="margin-top:8px" value="'+esc(tmpName)+'"><button class="pri" style="margin-top:8px" data-a="copyscript">Copy script</button>'+(scriptShow?'<textarea readonly rows="6" style="margin-top:8px">'+esc(scriptText())+'</textarea>':'<button class="lnk" style="margin-top:8px" data-a="showscript">Show script text</button>')+'</div>';
     h+='<div class="stepc"><b>2. Create the web app</b><p class="lbl" style="margin:4px 0 0">Open script.google.com and tap New project. Delete the sample code and paste the script. Tap Deploy, then New deployment, choose Web app, set Who has access to Anyone, and tap Deploy. Allow the permissions, then copy the Web app URL.</p></div>';
     h+='<div class="stepc"><b>3. Paste the URL</b><input id="surl" type="url" placeholder="https://script.google.com/macros/s/…/exec" style="margin-top:8px" value="'+esc(tmpUrl)+'"><button class="pri" style="margin-top:8px" data-a="connect">Connect and sync</button></div>';
@@ -1363,10 +1473,10 @@ function syncPage(){
   h+=(S.sid?'':'<div class="stepc"><b class="bad">Update your script</b><p class="lbl" style="margin:4px 0 0">This script is out of date. Update it so switching accounts or devices can never overwrite your Sheet. Open Password below, type your current password, tap Copy updated script, paste it over the old code, then Deploy, Manage deployments, edit, New version, Deploy.</p></div>')+'<div class="callout"><b>Connected to '+esc(S.sheetName||'your Google Sheet')+'</b>'+(S.owner?'<p class="lbl" style="margin:2px 0 0">Google account: '+esc(S.owner)+'</p>':'')+'<span style="display:none"></span><p class="lbl" id="syncmsg" style="margin:4px 0 0">'+esc(syncLabel())+'</p></div>';
   h+='<button class="pri" style="margin-top:10px" data-a="sync">Sync now</button>';
   if(S.sheetUrl)h+='<a class="sec linkbtn" href="'+esc(S.sheetUrl)+'" target="_blank" rel="noopener">Open Google Sheet</a>';
-  h+='<div class="stepc"><b>Add another device</b><p class="lbl" style="margin:4px 0 8px">Open this same app on it, go to Sync settings, and paste this code.</p><button class="sec" data-a="copycode">Copy connection code</button>'+(codeShow?'<textarea readonly rows="3" style="margin-top:8px">'+esc(connCode())+'</textarea>':'')+'</div>';
+  h+='<div class="stepc"><b>Add another device</b><p class="lbl" style="margin:4px 0 8px">Open this same app on it, go to Sync settings, and paste this code.</p><button class="sec" data-a="copycode">Copy connection code</button>'+(S.token?'<button class="sec" data-a="showqr" style="margin-left:8px">Show QR</button>':'')+(codeShow?'<textarea readonly rows="3" style="margin-top:8px">'+esc(connCode())+'</textarea>':'')+'</div>';
   h+='<div class="stepc"><b>Password</b><p class="lbl" style="margin:4px 0 8px">'+(pwShow?'Your password: <b>'+esc(S.token||'')+'</b>':'Your password is saved on this device.')+' <button class="lnk" data-a="pwshow">'+(pwShow?'Hide':'Show')+'</button></p><input id="npw" placeholder="New password (at least 6 characters)" value="'+esc(tmpNpw)+'"><div class="bact" style="margin-top:8px"><button class="sec" data-a="newpwscript">Copy updated script</button><button class="sec" data-a="pwlocal">Use on this device</button></div><p class="lbl" style="margin:8px 0 0">To change it: type the new password, tap Copy updated script, paste it over the old code in your script, then Deploy, Manage deployments, edit, New version, Deploy. Then tap Use on this device, and do the same on your other devices (just type it and tap Use on this device).</p></div>';
   h+='<p class="lbl" style="margin-top:12px">Syncs automatically after each change, when you open the app, and every minute while it is open. In the Sheet, each month has its own tab, newest first, and the Summary tab groups months by year.</p>';
-  h+=(discArm===1?'<p class="lbl" style="margin:12px 0 0">Disconnecting also clears this device so another account cannot mix with it. Your data stays in the Google Sheet. Any last changes are synced first.</p>':'')+(discArm===2?'<div class="stepc"><b>Some changes are not synced yet</b><p class="lbl" style="margin:4px 0 8px">The last sync could not finish, so erasing now would lose them. Sync again, or download a backup first.</p><button class="sec" data-a="backup">Download backup</button></div>':'')+'<button class="sec" style="color:var(--bad);margin-top:10px" data-a="disconnect">'+(discArm===2?'Erase this device anyway':discArm===1?'Tap again to disconnect and clear this device':'Disconnect')+'</button>';
+  h+=(discArm===1?'<p class="lbl" style="margin:12px 0 0">Logging out also clears this device so another account cannot mix with it. Your data stays in the Google Sheet. Any last changes are synced first.</p>':'')+(discArm===2?'<div class="stepc"><b>Some changes are not synced yet</b><p class="lbl" style="margin:4px 0 8px">The last sync could not finish, so erasing now would lose them. Sync again, or download a backup first.</p><button class="sec" data-a="backup">Download backup</button></div>':'')+'<button class="sec" style="color:var(--bad);margin-top:10px" data-a="disconnect">'+(discArm===2?'Erase this device anyway':discArm===1?'Tap again to log out and clear this device':'Log out')+'</button>';
   return h;
 }
 let pendConn=null;
@@ -1380,11 +1490,11 @@ function clearData(){
 function clearLocalExtras(){try{localStorage.removeItem(K('bankcash'));localStorage.removeItem(K('paymethods'))}catch(e){}pmEd=null;if(draft.pay&&!payList([]).includes(draft.pay)&&!draft.edit)draft.pay=''}
 function wipeAll(){
   clearLocalExtras();clearData();S={};saveS();pendConn=null;tmpUrl='';tmpCode='';tmpKey='';tmpPw='';tmpNpw='';tmpName='';pwShow=false;scriptShow=false;codeShow=false;discArm=0;syncMode='re';
-  view='home';render();toast('Disconnected. This device was reset. Your data is still in your Google Sheet.');
+  view='home';render();toast('Logged out. This device was reset. Your data is still in your Google Sheet.');
 }
 async function disconnectFlow(){
   if(!discArm){discArm=1;render(true);return}
-  if(discArm===1&&unsynced()){setStatus('Syncing before disconnecting…');await sync();if(unsynced()){discArm=2;render(true);return}}
+  if(discArm===1&&unsynced()){setStatus('Syncing before logging out…');await sync();if(unsynced()){discArm=2;render(true);return}}
   wipeAll();
 }
 async function finishConnect(url,token,pk){
@@ -1401,7 +1511,7 @@ async function connectFlow(url,token){
     try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:token,peek:1})});pk=await r.json()}
     catch(e){toast('Couldn’t reach Google. Check the URL and that access is set to Anyone.');return}
     if(!pk||!pk.ok){toast(pk&&pk.error==='Wrong token'?'Wrong password for that script':((pk&&pk.error)||'Could not connect'));return}
-    if(!pk.peek){connMsg='That script is out of date, so connecting could mix data. Update it first: open First-time setup, type your existing password, tap Copy script, paste it over the old code in Google, then Deploy, Manage deployments, edit, New version, Deploy.';toast('Script is out of date. See the note on this page');render(true);return}
+    if(!pk.peek){connMsg='That script is out of date, so connecting could mix data. Update it first: open Set up (admin), type your existing password, tap Copy script, paste it over the old code in Google, then Deploy, Manage deployments, edit, New version, Deploy.';toast('Script is out of date. See the note on this page');render(true);return}
     connMsg='';
     const localN=live().length,localEmpty=!localN&&!hasLocalCfg(),sheetEmpty=!pk.entries&&!pk.hasCfg;
     if(localEmpty&&tx.length){tx=[];persist()}   // only deleted leftovers: never let them delete anything in the Sheet
@@ -1494,6 +1604,7 @@ document.addEventListener('change',e=>{
     render(true);
   }
   else if(t.id==='bccash'){const n=bcParse(t.value),prev=bcGet();if(n===null){toast('Enter a valid amount');render(true);return}if(n===prev.cash)return;bcSet({cash:n});bcAmt='';render(true);toast('Cash updated',()=>{bcSet(prev);render(true)})}
+  else if(t.id==='scanfile'){scanFile(t)}
   else if(t.id==='rfile'){const f=t.files&&t.files[0];if(f){const fr=new FileReader();fr.onload=()=>loadPending(String(fr.result));fr.readAsText(f)}}
   else if(t.dataset.f){const k=t.dataset.f,nv=t.type==='checkbox'?t.checked:t.value;if(fq[k]===nv)return;fq[k]=nv;if(k==='all')render(true);else refreshList()}
 });
@@ -1510,7 +1621,7 @@ async function sync(){
     const r=await fetch(S.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:S.token,since:S.cursor||0,rows:tx.filter(t=>t.upd>=(S.pushed||0)),cfg:sendCfg?{upd:cu,base:S.cfgKnown||0,data:cfgData()}:null,cfgKnown:S.cfgKnown||0})});
     const j=await r.json();
     if(!j.ok){setStatus(j.error==='Wrong token'?'Wrong token. Check your password in Sync settings.':(j.error||'Sync failed'));return}
-    if(S.sid&&j.sid&&j.sid!==S.sid){setStatus('This script now points to a different Google Sheet. Disconnect and reconnect.');return}
+    if(S.sid&&j.sid&&j.sid!==S.sid){setStatus('This script now points to a different Google Sheet. Log out and log in again.');return}
     if(!S.sid&&j.sid)S.sid=j.sid;
     j.rows.forEach(n=>{const l=tx.find(t=>t.id===n.id);if(!l)tx.push(n);else if(n.upd>=l.upd)Object.assign(l,n)});
     if(j.cfg){const d=j.cfg.data||{};bills=d.bills||[];budgets=d.budgets||{};goals=d.goals||[];recur=d.recur||[];plans=d.plans||[];if(d.cats)applyCats(d.cats);favs=d.favs||[];cfgUpd=j.cfg.upd;persistCfg();S.cfgKnown=cfgUpd;if(sendCfg)toast('Settings changed on another device were kept')}
@@ -1528,6 +1639,7 @@ window.addEventListener('online',syncSoon);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 try{applyCats(JSON.parse(localStorage.getItem(K('cats'))||'null'))}catch(e){}
 ensureDemo();runRecur();render();
+hashConnect();
 if(S.url&&S.token)sync();
 </script>
 </body>
