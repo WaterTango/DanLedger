@@ -486,6 +486,9 @@ select.mpill{border-radius:var(--r);min-height:40px;padding:0 14px;font-size:15p
 [data-style="bold"] .tseg button{border-radius:var(--r)}
 .tav{border-radius:var(--r-sm)}
 .trow .tag:not(.tpay)::before,.achips .cchip::before{border-radius:50%}
+[data-style="bold"] .safe.neu{background:var(--bk-safe)}
+:is([data-style="bold"],[data-style="classic"],[data-style="soft"]) .achips.cscroll{padding:2px}
+[data-style="bold"] .amtblk{margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -1393,7 +1396,7 @@ function payChips(){
 }
 let statsTab='overview',revShow=false;
 const DEMO_VER=9;
-const APP_VER='v19'; // keep in step with sw.js cache ledger-vN
+const APP_VER='v20'; // keep in step with sw.js cache ledger-vN
 function ensureDemo(){
   if(PROFILE==='personal')return;
   let v='';try{v=localStorage.getItem('fin.demo.ver')||''}catch(e){}
