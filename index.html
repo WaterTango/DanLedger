@@ -511,6 +511,21 @@ nav [aria-current="true"]{background:color-mix(in srgb,var(--acc) 8%,transparent
 [data-style="bold"] .ppchip::before{border:2px solid var(--ink)}
 [data-style="bold"] .pcdot{outline:1px solid var(--ink)}
 [data-style="bold"] .pcmore{background:#EBD3A6;color:#26221C}
+
+.payc{background:none;border:0;border-radius:0;box-shadow:none;padding:0 0 16px;margin:0;border-bottom:1px solid var(--line);gap:10px}
+.payh{align-items:center;min-height:28px}
+.payh b{font-size:16px;font-weight:700}
+.paym{font-size:13px}
+.paybig{font-size:30px;font-weight:700;line-height:1.1}
+.paysub{margin:-8px 0 0;font-size:13px}
+.paytx{margin:0;font-size:13px;line-height:1.45}
+.payc .pri.payb{min-height:48px}
+.pacc .sxb{min-height:44px;padding:12px 0}
+.pacc .sxn{font-size:16px;font-weight:700}
+.pacc .sxsum{font-size:13px;font-weight:400;color:var(--mut)}
+.paccbar{display:block;height:6px;border-radius:2px;background:var(--line);overflow:hidden;margin:-4px 0 12px}
+.paccbar i{display:block;height:100%;background:var(--pc-budget);border-radius:2px}
+[data-style="bold"] .payc{background:#F7E6C4;border:0;border-radius:var(--r);padding:14px;margin:0 0 6px}
 .bccancel{width:100%;min-height:48px;padding:14px;border-radius:var(--r);font-weight:500}
 .ver{text-align:center;color:var(--mut);font-size:12px;margin:28px 0 0}
 .htop{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -617,7 +632,6 @@ let plans=[];try{plans=JSON.parse(localStorage.getItem(K('plans'))||'[]')}catch(
 let favs=[];try{favs=JSON.parse(localStorage.getItem(K('favs'))||'[]')}catch(e){favs=[]}
 let pays=[];try{pays=JSON.parse(localStorage.getItem(K('pays'))||'[]');if(!Array.isArray(pays))pays=[]}catch(e){pays=[]}
 let pd={id:null,name:'',amt:'',cat:'Other'},accOpen={},planAll=false,planOpen=false;
-try{accOpen=JSON.parse(localStorage.getItem('fin.acc')||'{}')}catch(e){}
 let cfgUpd=0;try{cfgUpd=+localStorage.getItem(K('cfgupd'))||0}catch(e){}
 if(!cfgUpd&&(pays.length||favs.length||plans.length||bills.length||goals.length||recur.length||Object.keys(budgets).length))cfgUpd=Date.now();
 function persistCfg(){try{localStorage.setItem(K('bills'),JSON.stringify(bills));localStorage.setItem(K('budgets'),JSON.stringify(budgets));localStorage.setItem(K('goals'),JSON.stringify(goals));localStorage.setItem(K('recur'),JSON.stringify(recur));localStorage.setItem(K('plans'),JSON.stringify(plans));localStorage.setItem(K('pays'),JSON.stringify(pays));localStorage.setItem(K('cats'),JSON.stringify(catsObj()));localStorage.setItem(K('favs'),JSON.stringify(favs));localStorage.setItem(K('cfgupd'),String(cfgUpd))}catch(e){}}
@@ -629,8 +643,10 @@ let ym=today().slice(0,7),view='home',showCsv=false,tt,curKey=today().slice(0,7)
 let theme='auto',catView='pie',STYLE='classic';
 const STYLES=[['classic','Classic','#FFFFFF','#2F5FD0'],['soft','Soft calm','#F2F3F7','#26335C'],['bank','Bank-grade','#FFFFFF','#0F766E'],['bold','Bold blocks','#EBCB8B','#26221C']];
 function loadStyle(){let v='classic';try{v=localStorage.getItem(K('style'))||'classic'}catch(e){}STYLE=STYLES.some(x=>x[0]===v)?v:'classic';document.documentElement.setAttribute('data-style',STYLE)}
-let stOpen={cat:true,trend:true},setOpen={appear:true,home:true};
-function loadOpen(){try{stOpen=Object.assign({cat:true,trend:true},JSON.parse(localStorage.getItem(K('statsopen'))||'{}'));setOpen=Object.assign({appear:true,home:true},JSON.parse(localStorage.getItem(K('setopen'))||'{}'))}catch(e){}}
+let stOpen={},setOpen={};
+function loadOpen(){closeAcc()}
+function closeAcc(){stOpen={};setOpen={};accOpen={};planOpen=false}
+const accTab=v=>v==='billform'?'bills':v==='goalform'?'plan':v==='calc'?'add':v==='sync'?'settings':v;
 loadStyle();loadOpen();try{theme=localStorage.getItem('fin.theme')||'light';catView=localStorage.getItem('fin.cv2')||'pie'}catch(e){}
 if(!['auto','light','gray','dark'].includes(theme))theme='light';
 const PAL=['#0B8F7A','#D98A2B','#4A7BD0','#C4547A','#8A6FD1','#7A8A84'];
@@ -801,7 +817,7 @@ const csv=()=>'date,type,category,amount,note,payment\n'+live().sort((a,b)=>a.da
 function render(keep){
   if(!/^\d{4}-\d{2}$/.test(ym))ym=curKey;
   if(view!==lastView&&!popping){try{history.pushState({v:view},'')}catch(e){}}
-  if(view==='plan'&&lastView!=='plan')planOpen=false;
+  if(view!==lastView&&accTab(view)!==accTab(lastView))closeAcc();
   if(view!=='sync')closeOverlays();
   lastView=view;
   document.body.classList.toggle('demo',PROFILE!=='personal');
@@ -908,7 +924,7 @@ function sample(){
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,v=b.dataset.v;
-  if(a==='nav'){closeOverlays();detOpen=false;calOpen=false;clrOpen=false;payPrompt=null;if(v==='add'&&b.dataset.t==='income'){draft={type:'income',amt:'',cat:CATS.income[0],note:'',date:today()}}bcOpen=false;bcAmt='';clearArm=false;editBud=null;if(view==='add'&&v!=='add'&&draft.edit)draft={type:'expense',amt:'',cat:'Food',note:'',date:today()};view=v;render()}
+  if(a==='nav'){closeOverlays();closeAcc();detOpen=false;calOpen=false;clrOpen=false;payPrompt=null;if(v==='add'&&b.dataset.t==='income'){draft={type:'income',amt:'',cat:CATS.income[0],note:'',date:today()}}bcOpen=false;bcAmt='';clearArm=false;editBud=null;if(view==='add'&&v!=='add'&&draft.edit)draft={type:'expense',amt:'',cat:'Food',note:'',date:today()};view=v;render()}
   else if(a==='prev'){ym=shift(ym,-1);render()}
   else if(a==='next'){ym=shift(ym,1);render()}
   else if(a==='type'){draft.type=v;draft.cat=CATS[v][0];draft.goal=0;render()}
@@ -1168,11 +1184,11 @@ else if(a==='canceledit'){draft={type:'expense',amt:'',cat:'Food',note:'',date:t
   else if(a==='ppsave'){if(!pp)return;const L=payLive(pp.m),lines=[{id:'bills',name:'Bills due',amt:L.bills,kind:'bills'},{id:'buy',name:'Planned purchases',amt:L.buy,kind:'buy'},{id:'budget',name:'Budgets',amt:L.budget,kind:'budget'}]
     .concat(goals.map(g=>({id:g.id,name:g.name,amt:ppC(pp.goals[g.id]),kind:'goal'})).filter(l=>l.amt>0)).concat(pp.own.filter(o=>o.name.trim()||ppC(o.amt)).map(o=>({id:o.id,name:o.name.trim()||'Line',amt:ppC(o.amt),kind:'own'})));
     const rec={m:pp.m,inc:ppC(pp.inc),got:monthInc(pp.m),lines:lines,at:Date.now()};pays=pays.filter(x=>x.m!==pp.m).concat([rec]);touchCfg();ym=pp.m;pp=null;view='plan';render();toast('Plan saved')}
-  else if(a==='sxtog'){const [g,id]=v.split('.'),o=g==='st'?stOpen:setOpen;o[id]=!o[id];try{localStorage.setItem(K(g==='st'?'statsopen':'setopen'),JSON.stringify(o))}catch(err){}render(true);const b=document.querySelector('[data-a="sxtog"][data-v="'+v+'"]');if(b)b.focus()}
+  else if(a==='sxtog'){const [g,id]=v.split('.'),o=g==='st'?stOpen:setOpen;o[id]=!o[id];render(true);const b=document.querySelector('[data-a="sxtog"][data-v="'+v+'"]');if(b)b.focus()}
   else if(a==='setback'){if(history.state&&history.state.v==='settings'){history.back()}else{view='stats';render()}}
   else if(a==='style'){if(!STYLES.some(x=>x[0]===v))return;STYLE=v;try{localStorage.setItem(K('style'),v)}catch(err){}document.documentElement.setAttribute('data-style',v);render(true)}
   else if(a==='copyrev'){revShow=!revShow;render(true);if(revShow)try{navigator.clipboard.writeText(reviewText()).then(()=>toast('Summary copied'),()=>{})}catch(err){}}
-  else if(a==='acc'){if(v==='plans')planOpen=!planOpen;else{accOpen[v]=!accOpen[v];try{localStorage.setItem('fin.acc',JSON.stringify(accOpen))}catch(err){}}render(true)}
+  else if(a==='acc'){if(v==='plans')planOpen=!planOpen;else{accOpen[v]=!accOpen[v];}render(true)}
   else if(a==='padd'){
     planOpen=true;
     const nm=pd.name.trim(),am=Math.round(parseFloat(pd.amt||'0')*100),er=$('#perr');
@@ -1503,7 +1519,7 @@ function payChips(){
 }
 let statsTab='overview',revShow=false;
 const DEMO_VER=9;
-const APP_VER='v21'; // keep in step with sw.js cache ledger-vN
+const APP_VER='v22'; // keep in step with sw.js cache ledger-vN
 function ensureDemo(){
   if(PROFILE==='personal')return;
   let v='';try{v=localStorage.getItem('fin.demo.ver')||''}catch(e){}
@@ -1947,7 +1963,7 @@ function planView(){
   const pm=planMode==='pct'&&inc>0,tb=CATS.expense.reduce((s,c)=>s+bLim(c,inc),0),pv=c=>pm?(c/inc*100).toFixed(1)+'%':fmt(c/100);
   const t=today(),nk=t.slice(0,7),d=+t.slice(8),D=dim(nk);
   const ACC={budgets:['#0B8F7A',1],plans:['#D98A2B',1],forecast:['#4A7BD0',0],goals:['#8A6FD1',0],repeat:['#7A8A84',0]};
-  const acc=(id,title,sm,body,pr,bad)=>{const o=id==='plans'?planOpen:!!accOpen[id],c=ACC[id];return '<div class="accw'+(c[1]?' hi':'')+'" style="--ac:'+c[0]+'"><button class="acc" data-a="acc" data-v="'+id+'" aria-expanded="'+o+'"><span class="acct">'+title+'</span><span class="accs">'+sm+'</span><span class="chev" aria-hidden="true">▾</span>'+(pr!=null?'<span class="accbar"><i style="width:'+pr+'%'+(bad?';background:var(--bad)':'')+'"></i></span>':'')+'</button>'+(o?'<div class="accb">'+body+'</div>':'')+'</div>'};
+  const acc=(id,title,sm,body,pr,bad)=>{const o=id==='plans'?planOpen:!!accOpen[id];return '<section class="sxs pacc" data-acc="'+id+'"><h2 class="sxh"><button class="sxb" data-a="acc" data-v="'+id+'" aria-expanded="'+o+'" aria-controls="pacc-'+id+'"><span class="sxt"><span class="sxn">'+title+'</span><span class="sxsum">'+sm+'</span></span>'+CHEV+'</button></h2>'+(id==='budgets'&&pr!=null?'<span class="paccbar" aria-hidden="true"><i style="width:'+pr+'%'+(bad?';background:var(--bad)':'')+'"></i></span>':'')+(o?'<div class="sxbody accb" id="pacc-'+id+'">'+body+'</div>':'')+'</section>'};
   // budgets
   let bb='<div class="seg" style="margin-bottom:10px"><button data-a="pm" data-v="rm" aria-pressed="'+(planMode==='rm')+'">RM</button><button data-a="pm" data-v="pct" aria-pressed="'+(planMode==='pct')+'">% of income</button></div>';
   const pu=c=>pm?pv(c):'RM '+pv(c),prevBy={};
@@ -1989,13 +2005,13 @@ function planView(){
   }).join(''):emptyBox('Start a savings goal','Set a target, like an emergency fund or a holiday.','newgoal','Add a goal');
   // repeating
   const rb=recur.length?recur.map(r=>'<div class="rw fr"><span>'+esc(r.note||r.cat)+' <span class="lbl">on day '+r.day+'</span></span><span>'+(r.type==='income'?'+':'−')+fmt(r.amt/100)+' <button class="sec" style="padding:2px 10px;font-size:13px" data-a="stoprec" data-id="'+r.rid+'">Stop</button></span></div>').join(''):'<p class="lbl">Tick “Repeat every month” when adding an entry, like salary or a subscription.</p>';
-  let h=monthBar()+'<h1 class="ttl" style="margin-top:14px">Plan</h1>'+payCard();
+  let h=monthBar()+'<h1 class="ttl" style="margin-top:14px">Plan</h1>'+payCard()+'<div class="paccs">';
   h+=acc('plans','Planned purchases',mp.length?mp.length+' · RM '+fmt(pTot/100):'None yet',pb,pTot?Math.round((pTot-pOpen)/pTot*100):null,false);
   h+=acc('budgets','Budgets',tb?pu(tb)+' budgeted':'Not set',bb,tb?Math.min(100,Math.round(sb/tb*100)):null,sb>tb);
   h+=acc('forecast','Month-end forecast',fc?'Projected balance '+(fc.pb<0?'-':'')+'RM '+fmt(Math.abs(fc.pb)/100):'Current month only',fb);
   h+=acc('goals','Savings goals',goals.length?goals.length+(goals.length===1?' goal':' goals'):'None yet',gb);
   h+=acc('repeat','Repeating entries',recur.length?recur.length+' repeating':'None',rb);
-  return h;
+  return h+'</div>';
 }
 const PKIND=['bills','buy','budget','goal','own'];
 function monthInc(k){return sum(inM(k),'income')}
@@ -2008,11 +2024,11 @@ function payLines(k,p){const L=payLive(k),out=[{kind:'bills',name:'Bills due',am
   (p.lines||[]).forEach(l=>{if(l.kind==='goal'){const g=goals.find(x=>x.id===l.id);out.push({kind:'goal',name:g?g.name:l.name,amt:l.amt|0,gi:gi++})}else if(l.kind==='own')out.push({kind:'own',name:l.name,amt:l.amt|0})});return out}
 function pcVar(l){return l.kind==='goal'?(l.gi%2?'var(--pc-goal2)':'var(--pc-goal)'):'var(--pc-'+l.kind+')'}
 function payCard(){
-  const k=ym,inc=monthInc(k),p=payGet(k);
-  if(!p&&!inc)return '<section class="payc" aria-label="Paycheck"><div class="payh"><b>Paycheck</b><span class="lbl">'+esc(mlabel(k))+'</span></div><p class="lbl" style="margin:0">No income yet this month. Add your pay to plan where it goes.</p><button class="sec payb" data-a="nav" data-v="add" data-t="income">Add income</button></section>';
-  if(!p)return '<section class="payc" aria-label="Paycheck"><div class="payh"><b>Paycheck</b><span class="lbl">'+esc(mlabel(k))+'</span></div><p class="paybig">RM '+fmt(inc/100)+'</p><p class="lbl" style="margin:0">received this month · not planned yet</p><p class="paytx">Decide where it goes: bills, purchases, budgets, goals. See what is left to spend freely.</p><button class="pri payb" data-a="payplan" data-v="'+k+'">Plan this paycheck</button></section>';
+  const k=ym,inc=monthInc(k),p=payGet(k),mn=new Date(+k.slice(0,4),+k.slice(5)-1,1).toLocaleDateString('en-GB',{month:'long'});
+  if(!p&&!inc)return '<section class="payc" aria-label="Paycheck"><div class="payh"><b>Paycheck</b><span class="lbl paym">'+esc(mn)+'</span></div><p class="lbl paytx">No income yet this month. Add your pay to plan where it goes.</p><button class="sec payb" data-a="nav" data-v="add" data-t="income">Add income</button></section>';
+  if(!p)return '<section class="payc" aria-label="Paycheck"><div class="payh"><b>Paycheck</b><span class="lbl paym">'+esc(mn)+'</span></div><p class="paybig">RM '+fmt(inc/100)+'</p><p class="lbl paysub">received this month · not planned yet</p><p class="lbl paytx">Decide where it goes: bills, purchases, budgets, goals. See what is left to spend freely.</p><button class="pri payb" data-a="payplan" data-v="'+k+'">Plan this paycheck</button></section>';
   const ls=payLines(k,p).filter(l=>l.amt>0),asg=ls.reduce((s,l)=>s+l.amt,0),free=p.inc-asg,tot=Math.max(p.inc,asg,1),more=inc-(p.got==null?p.inc:p.got);
-  return '<section class="payc" aria-label="Paycheck plan"><div class="payh"><b>Paycheck plan</b><span class="lbl">'+esc(mlabel(k))+'</span></div>'
+  return '<section class="payc" aria-label="Paycheck plan"><div class="payh"><b>Paycheck plan</b><span class="lbl paym">'+esc(mn)+'</span></div>'
    +'<p class="lbl" style="margin:0">RM '+fmt(p.inc/100)+' received · RM '+fmt(asg/100)+' assigned</p>'
    +'<div class="pcbar" role="img" aria-label="Plan split: '+esc(ls.map(l=>l.name+' RM '+fmt(l.amt/100)).join(', ')+(free>0?', free RM '+fmt(free/100):''))+'">'+ls.map(l=>'<i style="flex:'+l.amt+';background:'+pcVar(l)+'"></i>').join('')+(free>0?'<i class="pcfree" style="flex:'+free+'"></i>':'')+'</div>'
    +'<div class="pcleg">'+ls.map(l=>'<div class="pcrow"><i style="background:'+pcVar(l)+'"></i><span>'+esc(l.name)+'</span><b>'+fmt(l.amt/100)+'</b></div>').join('')
