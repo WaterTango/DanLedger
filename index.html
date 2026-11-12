@@ -421,6 +421,96 @@ nav [aria-current="true"]{background:color-mix(in srgb,var(--acc) 8%,transparent
 [data-style="bold"] .detedit{background:var(--bk-hero);color:var(--bk-ink);font-weight:700}
 [data-style="bold"] .pad button{border:0;background:var(--card);box-shadow:0 2px 0 rgba(20,18,15,.12);font-weight:600;font-size:22px}
 [data-style="bold"] .sxb,[data-style="bold"] .sth .ttl{font-weight:700}
+:root{--pc-bills:#7C8FD0;--pc-buy:#E08AB4;--pc-budget:#E0B25A;--pc-goal:#4DB89A;--pc-goal2:#8ADBC4;--pc-own:#B49CF0}
+:root[data-theme="light"]{--pc-bills:#2F5FD0;--pc-buy:#D0679A;--pc-budget:#B28127;--pc-goal:#2D9B87;--pc-goal2:#5A9589;--pc-own:#8A6FC4}
+:root[data-theme="dark"]{--pc-bills:#7C8FD0;--pc-buy:#E08AB4;--pc-budget:#E0B25A;--pc-goal:#4DB89A;--pc-goal2:#8ADBC4;--pc-own:#B49CF0}
+:root[data-style="soft"]{--pc-bills:#7C8FD0;--pc-buy:#E08AB4;--pc-budget:#E0B25A;--pc-goal:#4DB89A;--pc-goal2:#8ADBC4;--pc-own:#B49CF0}
+:root[data-style="soft"][data-theme="light"]{--pc-bills:#5B6EA8;--pc-buy:#C46A93;--pc-budget:#BB8B36;--pc-goal:#2E7D6B;--pc-goal2:#689D90;--pc-own:#8A6FC4}
+:root[data-style="soft"][data-theme="dark"]{--pc-bills:#7C8FD0;--pc-buy:#E08AB4;--pc-budget:#E0B25A;--pc-goal:#4DB89A;--pc-goal2:#8ADBC4;--pc-own:#B49CF0}
+:root[data-style="bank"]{--pc-bills:#7C8FD0;--pc-buy:#E08AB4;--pc-budget:#E0B25A;--pc-goal:#4DB89A;--pc-goal2:#8ADBC4;--pc-own:#B49CF0}
+:root[data-style="bank"][data-theme="light"]{--pc-bills:#3B6EA5;--pc-buy:#C46A93;--pc-budget:#B18828;--pc-goal:#0F766E;--pc-goal2:#5D988D;--pc-own:#7A6FB8}
+:root[data-style="bank"][data-theme="dark"]{--pc-bills:#7C8FD0;--pc-buy:#E08AB4;--pc-budget:#E0B25A;--pc-goal:#4DB89A;--pc-goal2:#8ADBC4;--pc-own:#B49CF0}
+:root[data-style="bold"]{--pc-bills:#7C8FD0;--pc-buy:#E08AB4;--pc-budget:#E0B25A;--pc-goal:#4DB89A;--pc-goal2:#8ADBC4;--pc-own:#B49CF0}
+:root[data-style="bold"][data-theme="light"]{--pc-bills:#A9BFE8;--pc-buy:#E7B0C4;--pc-budget:#E39A5A;--pc-goal:#8FCFC4;--pc-goal2:#BFE3DC;--pc-own:#CDBFE8}
+:root[data-style="bold"][data-theme="dark"]{--pc-bills:#7C8FD0;--pc-buy:#E08AB4;--pc-budget:#E0B25A;--pc-goal:#4DB89A;--pc-goal2:#8ADBC4;--pc-own:#B49CF0}
+:root{--pc-ok:#6FD08C;--pc-bad:#FF8A80}
+:root[data-theme="light"]{--pc-ok:#2E7D32;--pc-bad:#B3261E}
+.payc{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;margin:0 0 4px;box-shadow:var(--shadow)}
+.payh{display:flex;justify-content:space-between;align-items:baseline}
+.payh b{font-size:16px;font-weight:600}
+.paybig{font-size:26px;font-weight:600;margin:0}
+.paytx{margin:0;font-size:14px}
+.payb{width:100%;min-height:44px}
+.pcbar{display:flex;height:12px;gap:2px;border-radius:2px;overflow:hidden}
+.pcbar i{display:block;height:100%;border-radius:0!important;min-width:2px}
+.pcfree{background:var(--line)}
+.pcleg{display:flex;flex-direction:column;gap:8px}
+.pcrow{display:flex;align-items:center;gap:8px;font-size:14px}
+.pcrow i{flex:none;width:10px;height:10px;border-radius:2px}
+.pcrow span{flex:1;min-width:0;overflow-wrap:anywhere}
+.pcrow b{font-weight:600}
+.pctot{border-top:1px solid var(--line);padding-top:8px}
+.pctot span{font-weight:600}
+.pcok{color:var(--pc-ok)}
+.pcbad{color:var(--pc-bad)}
+.pcmore{display:flex;align-items:center;gap:10px;font-size:13px;background:var(--tint);padding:8px 10px;border-radius:var(--r)}
+.pcmore span{flex:1}
+.pcmore .sec{min-height:44px}
+.ppl{padding-bottom:150px}
+.pphd{display:flex;align-items:center;gap:4px;min-height:48px}
+.pphd .ttl{margin:0}
+.pprow{display:flex;align-items:center;gap:10px;min-height:52px;border-bottom:1px solid var(--line)}
+.ppnm{flex:1;min-width:0;display:flex;flex-direction:column}
+.ppnm b{font-weight:600;overflow-wrap:anywhere}
+.ppnm .lbl{margin-left:18px}
+.pcdot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px;vertical-align:0}
+.ppv{font-weight:600}
+.ppin{width:130px;min-height:44px;text-align:right;font-weight:600;flex:none}
+.ppname{flex:1;min-width:0;min-height:44px}
+.ppown .pcdot{margin-right:0}
+.ppown .ppin{width:110px}
+.ppx{flex:none;width:44px;height:44px;font-size:22px;color:var(--mut)}
+.ppsec{margin:14px 0 0}
+.ppg{border-bottom:1px solid var(--line);padding-bottom:8px}
+.ppg .pprow{border-bottom:0}
+.ppchips{display:flex;gap:6px;flex-wrap:wrap}
+.ppchip{min-height:44px;padding:0 12px;font-size:13px;font-weight:600;background:none;display:flex;align-items:center;position:relative}
+.ppchip::before{content:'';position:absolute;left:0;right:0;top:6px;bottom:6px;border:1px solid var(--line);border-radius:var(--r-sm)}
+.ppadd{width:100%;min-height:44px;margin-top:10px}
+.ppbar{position:fixed;left:0;right:0;bottom:calc(68px + env(safe-area-inset-bottom,0px));z-index:5;background:var(--bg);border-top:1px solid var(--line);padding:12px 16px}
+.ppbar>*{max-width:448px;margin-left:auto;margin-right:auto}
+.ppfoot{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.ppfoot b{font-size:22px;font-weight:700}
+.clrline{margin:0 0 10px}
+.clrbtn{width:100%;min-height:48px;color:var(--bad);font-weight:600}
+.clrs{gap:12px}
+.clrttl{margin:0;font-size:20px}
+.clrtx{margin:0;font-size:14px;line-height:1.45}
+.clrbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-size:13px;line-height:1.6}
+.clrg{margin:0}
+.clrbk{min-height:48px;font-weight:600}
+.clrlab{font-size:14px}
+.clrlab b{font-weight:600}
+#clrin{min-height:48px}
+#clrin.ok{border:2px solid var(--pc-ok)}
+.clrok{margin:0;font-size:12px;min-height:16px;color:var(--pc-ok)}
+.clrgo{min-height:52px;border-radius:var(--r);background:var(--bad);color:var(--bg);font-size:16px;font-weight:600}
+.clrgo:disabled{opacity:.45;cursor:not-allowed}
+.clrno{min-height:44px;font-size:15px}
+[data-style="bold"] .payc{background:#F7E6C4;border:2px solid var(--ink);color:#26221C}
+[data-style="bold"] .payc .lbl{color:#4A4234}
+[data-style="bold"] .payc .sec{background:#FFFFFF;color:#26221C;border:2px solid #26221C}
+[data-style="bold"] .payc .pri{background:var(--pri-bg);color:var(--pri-fg)}
+[data-style="bold"] .pcbar i{outline:1.5px solid #26221C;outline-offset:-1.5px}
+[data-style="bold"] .pcbar{padding:1px}
+[data-style="bold"] .payc .pcfree{background:#FFFFFF}
+[data-style="bold"] .pcrow i{outline:1px solid #26221C}
+[data-style="bold"] .payc .pcok{color:#2E6B32}
+[data-style="bold"] .payc .pcbad{color:#A8261E}
+[data-style="bold"] .ppin,[data-style="bold"] .ppname{background:#F7E6C4;border:2px solid var(--ink);color:#26221C}
+[data-style="bold"] .ppchip::before{border:2px solid var(--ink)}
+[data-style="bold"] .pcdot{outline:1px solid var(--ink)}
+[data-style="bold"] .pcmore{background:#EBD3A6;color:#26221C}
 .bccancel{width:100%;min-height:48px;padding:14px;border-radius:var(--r);font-weight:500}
 .ver{text-align:center;color:var(--mut);font-size:12px;margin:28px 0 0}
 .htop{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -525,11 +615,12 @@ Object.keys(budgets).forEach(k=>{if(typeof budgets[k]==='number')budgets[k]={rm:
 let recur=[];try{recur=JSON.parse(localStorage.getItem(K('recur'))||'[]')}catch(e){recur=[]}
 let plans=[];try{plans=JSON.parse(localStorage.getItem(K('plans'))||'[]')}catch(e){plans=[]}
 let favs=[];try{favs=JSON.parse(localStorage.getItem(K('favs'))||'[]')}catch(e){favs=[]}
+let pays=[];try{pays=JSON.parse(localStorage.getItem(K('pays'))||'[]');if(!Array.isArray(pays))pays=[]}catch(e){pays=[]}
 let pd={id:null,name:'',amt:'',cat:'Other'},accOpen={},planAll=false,planOpen=false;
 try{accOpen=JSON.parse(localStorage.getItem('fin.acc')||'{}')}catch(e){}
 let cfgUpd=0;try{cfgUpd=+localStorage.getItem(K('cfgupd'))||0}catch(e){}
-if(!cfgUpd&&(favs.length||plans.length||bills.length||goals.length||recur.length||Object.keys(budgets).length))cfgUpd=Date.now();
-function persistCfg(){try{localStorage.setItem(K('bills'),JSON.stringify(bills));localStorage.setItem(K('budgets'),JSON.stringify(budgets));localStorage.setItem(K('goals'),JSON.stringify(goals));localStorage.setItem(K('recur'),JSON.stringify(recur));localStorage.setItem(K('plans'),JSON.stringify(plans));localStorage.setItem(K('cats'),JSON.stringify(catsObj()));localStorage.setItem(K('favs'),JSON.stringify(favs));localStorage.setItem(K('cfgupd'),String(cfgUpd))}catch(e){}}
+if(!cfgUpd&&(pays.length||favs.length||plans.length||bills.length||goals.length||recur.length||Object.keys(budgets).length))cfgUpd=Date.now();
+function persistCfg(){try{localStorage.setItem(K('bills'),JSON.stringify(bills));localStorage.setItem(K('budgets'),JSON.stringify(budgets));localStorage.setItem(K('goals'),JSON.stringify(goals));localStorage.setItem(K('recur'),JSON.stringify(recur));localStorage.setItem(K('plans'),JSON.stringify(plans));localStorage.setItem(K('pays'),JSON.stringify(pays));localStorage.setItem(K('cats'),JSON.stringify(catsObj()));localStorage.setItem(K('favs'),JSON.stringify(favs));localStorage.setItem(K('cfgupd'),String(cfgUpd))}catch(e){}}
 function touchCfg(){cfgUpd=Math.max(Date.now(),cfgUpd+1);persistCfg();if(S.url){S.dirtyAt=Date.now();saveS()}syncSoon()}
 const saveP=()=>touchCfg(),saveR=()=>touchCfg();
 const pad2=n=>String(n).padStart(2,'0');
@@ -714,8 +805,8 @@ function render(keep){
   if(view!=='sync')closeOverlays();
   lastView=view;
   document.body.classList.toggle('demo',PROFILE!=='personal');
-  $('#app').innerHTML=topBadge()+(view==='home'?bcSheet():'')+({home:home,add:add,bills:billsView,billform:billForm,plan:planView,goalform:goalForm,sync:syncPage,stats:stats,settings:settingsView,calc:calcView})[view]();
-  const vv=view==='billform'?'bills':view==='goalform'?'plan':view==='sync'||view==='settings'?'stats':view==='calc'?'add':view,nd=dueList().length;
+  $('#app').innerHTML=topBadge()+(view==='home'?bcSheet()+payPromptSheet():'')+({home:home,add:add,bills:billsView,billform:billForm,plan:planView,goalform:goalForm,sync:syncPage,stats:stats,settings:settingsView,paycheck:payView,calc:calcView})[view]();
+  const vv=view==='billform'?'bills':view==='goalform'?'plan':view==='paycheck'?'plan':view==='sync'||view==='settings'?'stats':view==='calc'?'add':view,nd=dueList().length;
   document.querySelectorAll('nav button').forEach(b=>{b.setAttribute('aria-current',String(b.dataset.v===vv));if(b.dataset.v==='bills')b.querySelector('.nl').textContent='Bills'+(nd?' ('+nd+')':'')});
   if(!keep)window.scrollTo(0,0);
 }
@@ -817,7 +908,7 @@ function sample(){
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,v=b.dataset.v;
-  if(a==='nav'){closeOverlays();detOpen=false;calOpen=false;bcOpen=false;bcAmt='';clearArm=false;editBud=null;if(view==='add'&&v!=='add'&&draft.edit)draft={type:'expense',amt:'',cat:'Food',note:'',date:today()};view=v;render()}
+  if(a==='nav'){closeOverlays();detOpen=false;calOpen=false;clrOpen=false;payPrompt=null;if(v==='add'&&b.dataset.t==='income'){draft={type:'income',amt:'',cat:CATS.income[0],note:'',date:today()}}bcOpen=false;bcAmt='';clearArm=false;editBud=null;if(view==='add'&&v!=='add'&&draft.edit)draft={type:'expense',amt:'',cat:'Food',note:'',date:today()};view=v;render()}
   else if(a==='prev'){ym=shift(ym,-1);render()}
   else if(a==='next'){ym=shift(ym,1);render()}
   else if(a==='type'){draft.type=v;draft.cat=CATS[v][0];draft.goal=0;render()}
@@ -845,7 +936,9 @@ document.addEventListener('click',e=>{
     if(draft.edit){const g=tx.find(t=>t.id===draft.edit);if(g){const old=g.amt,og=g.goal||0;Object.assign(g,rec);if(rec.amt!==old)syncAmt(g,old);if(og!==gl||rec.amt!==old){if(og)goalAdd(og,-old);if(gl)goalAdd(gl,rec.amt)}}}else{tx.push(Object.assign({id:Date.now()*1000+Math.floor(Math.random()*1000)},rec));if(gl)goalAdd(gl,rec.amt)}
     if(draft.rep&&!draft.edit){recur.push({rid:100000+Math.floor(Math.random()*899999),type:rec.type,cat:rec.cat,note:rec.note,amt:rec.amt,day:+rec.date.slice(8),last:rec.date.slice(0,7),goal:rec.goal});saveR()}
     save();ym=(draft.date||today()).slice(0,7);
+    const isNewInc=!draft.edit&&rec.type==='income',pm=rec.date.slice(0,7);
     draft={type:draft.type,amt:'',cat:CATS[draft.type][0],note:'',date:today()};
+    payPrompt=(isNewInc&&!payGet(pm)&&!payNot().includes(pm)&&inM(pm).filter(t=>t.type==='income').length===1)?{m:pm,amt:rec.amt,cat:rec.cat}:null;
     view='home';render();toast('Entry saved');
   }
   else if(a==='del'){
@@ -927,7 +1020,7 @@ document.addEventListener('click',e=>{
   else if(a==='fcatmore'){fCatMore=!fCatMore;render(true)}
   else if(a==='paym'){draft.pay=draft.pay===v?'':v;render(true)}
   else if(a==='profile'){setProfile(v)}
-  else if(a==='resetdemo'){if(PROFILE==='personal')return;tx=[];bills=[];budgets={};goals=[];recur=[];plans=[];favs=[];persist();persistCfg();sample();try{localStorage.setItem('fin.demo.ver',String(DEMO_VER))}catch(err){}render(true);toast('Demo data reset')}
+  else if(a==='resetdemo'){if(PROFILE==='personal')return;tx=[];bills=[];budgets={};goals=[];recur=[];plans=[];favs=[];pays=[];persist();persistCfg();sample();try{localStorage.setItem('fin.demo.ver',String(DEMO_VER))}catch(err){}render(true);toast('Demo data reset')}
   else if(a==='bmode'){
     if(v==='inst'){bd.mode='inst';bd.n=bd.n||2;if(!bd.from)bd.from=ym;if(!bd.itotal&&parseFloat(bd.amt)>0)bd.itotal=String(Math.round(parseFloat(bd.amt)*bd.n*100)/100)}
     else{bd.mode='reg';if(parseFloat(bd.itotal)>0)bd.amt=String(Math.round(parseFloat(bd.itotal)/(bd.n||1)*100)/100)}
@@ -984,7 +1077,7 @@ document.addEventListener('click',e=>{
   else if(a==='rcancel'){pend=null;render(true)}
   else if(a==='dorestore'){
     const d=pend.d,now=Date.now();
-    tx=d.tx;bills=d.bills||[];budgets=d.budgets||{};goals=d.goals||[];recur=d.recur||[];plans=d.plans||[];favs=d.favs||[];applyCats(d.cats||null);
+    tx=d.tx;bills=d.bills||[];budgets=d.budgets||{};goals=d.goals||[];recur=d.recur||[];plans=d.plans||[];favs=d.favs||[];pays=Array.isArray(d.pays)?d.pays:[];applyCats(d.cats||null);
     Object.keys(budgets).forEach(k=>{if(typeof budgets[k]==='number')budgets[k]={rm:budgets[k]}});
     if(d.bankcash&&typeof d.bankcash==='object')bcSet(d.bankcash);
     if(Array.isArray(d.paymethods))paySet(d.paymethods.filter(x=>typeof x==='string').map(x=>x.trim()).filter(Boolean).slice(0,PM_MAX));
@@ -1066,6 +1159,15 @@ else if(a==='deledit'){
 }
 else if(a==='canceledit'){draft={type:'expense',amt:'',cat:'Food',note:'',date:today()};view='home';render();toast('Changes discarded')}
   else if(a==='stab'){statsTab=v;render(true)}
+  else if(a==='payplan'){payPrompt=null;payOpen(v||ym,b.dataset.u==='1')}
+  else if(a==='payback'){if(history.state&&history.state.v==='paycheck'){history.back()}else{view='plan';render()}}
+  else if(a==='paynot'){if(payPrompt){const n=payNot();if(!n.includes(payPrompt.m))n.push(payPrompt.m);try{localStorage.setItem(K('paynot'),JSON.stringify(n.slice(-24)))}catch(err){}}payPrompt=null;render(true)}
+  else if(a==='ppchip'){if(!pp)return;const inc=ppC(pp.inc),cur=ppC(pp.goals[b.dataset.id]);let val=v==='rest'?Math.max(0,ppUn()+cur):Math.round(inc*Number(v)/100);pp.goals[b.dataset.id]=(val/100).toFixed(2);render(true)}
+  else if(a==='ppadd'){if(!pp)return;pp.own.push({id:Date.now(),name:'',amt:''});render(true);const i=document.querySelectorAll('.ppname');if(i.length)i[i.length-1].focus()}
+  else if(a==='ppdel'){if(!pp)return;pp.own=pp.own.filter(o=>String(o.id)!==b.dataset.id);render(true)}
+  else if(a==='ppsave'){if(!pp)return;const L=payLive(pp.m),lines=[{id:'bills',name:'Bills due',amt:L.bills,kind:'bills'},{id:'buy',name:'Planned purchases',amt:L.buy,kind:'buy'},{id:'budget',name:'Budgets',amt:L.budget,kind:'budget'}]
+    .concat(goals.map(g=>({id:g.id,name:g.name,amt:ppC(pp.goals[g.id]),kind:'goal'})).filter(l=>l.amt>0)).concat(pp.own.filter(o=>o.name.trim()||ppC(o.amt)).map(o=>({id:o.id,name:o.name.trim()||'Line',amt:ppC(o.amt),kind:'own'})));
+    const rec={m:pp.m,inc:ppC(pp.inc),got:monthInc(pp.m),lines:lines,at:Date.now()};pays=pays.filter(x=>x.m!==pp.m).concat([rec]);touchCfg();ym=pp.m;pp=null;view='plan';render();toast('Plan saved')}
   else if(a==='sxtog'){const [g,id]=v.split('.'),o=g==='st'?stOpen:setOpen;o[id]=!o[id];try{localStorage.setItem(K(g==='st'?'statsopen':'setopen'),JSON.stringify(o))}catch(err){}render(true);const b=document.querySelector('[data-a="sxtog"][data-v="'+v+'"]');if(b)b.focus()}
   else if(a==='setback'){if(history.state&&history.state.v==='settings'){history.back()}else{view='stats';render()}}
   else if(a==='style'){if(!STYLES.some(x=>x[0]===v))return;STYLE=v;try{localStorage.setItem(K('style'),v)}catch(err){}document.documentElement.setAttribute('data-style',v);render(true)}
@@ -1125,9 +1227,12 @@ else if(a==='canceledit'){draft={type:'expense',amt:'',cat:'Food',note:'',date:t
     g.saved+=n;saveP();render(true);toast('Added RM '+fmt(n/100)+' to '+g.name);
   }
   else if(a==='clear'){
+    if(PROFILE==='personal'){clrOpen=true;clrTxt='';render(true);return}
     if(!clearArm){clearArm=true;render(true);return}
-    tx.forEach(t=>{if(!t.del){t.del=1;t.upd=Date.now()}});bills=[];budgets={};goals=[];recur=[];plans=[];favs=[];clearLocalExtras();saveB();clearArm=false;save();render(true);toast('All data cleared');
+    eraseAll();clearArm=false;render(true);toast('All data cleared');
   }
+  else if(a==='clrclose'){clrOpen=false;clrTxt='';render(true);const c=document.querySelector('[data-a="clear"]');if(c)c.focus()}
+  else if(a==='clrgo'){const i=document.getElementById('clrin');if(PROFILE!=='personal'||!i||!clrMatch(i.value))return;eraseAll();clrOpen=false;clrTxt='';render(true);toast('All data cleared')}
   else if(a==='sync'){sync()}
   else if(a==='sample'){sample();render()}
   else if(a==='csv'){showCsv=!showCsv;render(true);if(showCsv)try{navigator.clipboard.writeText(csv()).then(()=>toast('CSV copied'),()=>{})}catch(err){}}
@@ -1135,6 +1240,8 @@ else if(a==='canceledit'){draft={type:'expense',amt:'',cat:'Food',note:'',date:t
 document.addEventListener('input',e=>{
   if(e.target.id==='itotal'){bd.itotal=e.target.value;const m=$('#isum');if(m)m.textContent=instSum()}
   if(e.target.id==='cname')catEd.name=e.target.value;
+  if(e.target.id==='clrin'){clrTxt=e.target.value;clrUpd()}
+  if(e.target.closest&&e.target.closest('.ppl'))payInput(e.target);
   if(e.target.id==='pmname'&&pmEd)pmEd.name=e.target.value;
   if(e.target.id==='pname')pd.name=e.target.value;
   if(e.target.id==='pamt')pd.amt=e.target.value;
@@ -1295,7 +1402,7 @@ function profBar(){
 }
 function ld(n,d){try{return JSON.parse(localStorage.getItem(K(n))||d)}catch(e){return JSON.parse(d)}}
 function loadProfile(){
-  tx=ld('tx','[]');bills=ld('bills','[]');budgets=ld('budgets','{}');goals=ld('goals','[]');recur=ld('recur','[]');plans=ld('plans','[]');favs=ld('favs','[]');applyCats(ld('cats','null'));S=ld('sync','{}');
+  tx=ld('tx','[]');bills=ld('bills','[]');budgets=ld('budgets','{}');goals=ld('goals','[]');recur=ld('recur','[]');plans=ld('plans','[]');favs=ld('favs','[]');pays=ld('pays','[]');if(!Array.isArray(pays))pays=[];applyCats(ld('cats','null'));S=ld('sync','{}');
   try{cfgUpd=+localStorage.getItem(K('cfgupd'))||0}catch(e){cfgUpd=0}
   Object.keys(budgets).forEach(k=>{if(typeof budgets[k]==='number')budgets[k]={rm:budgets[k]}});
   tx.forEach(t=>{if(!t.upd)t.upd=t.id});
@@ -1396,7 +1503,7 @@ function payChips(){
 }
 let statsTab='overview',revShow=false;
 const DEMO_VER=9;
-const APP_VER='v20'; // keep in step with sw.js cache ledger-vN
+const APP_VER='v21'; // keep in step with sw.js cache ledger-vN
 function ensureDemo(){
   if(PROFILE==='personal')return;
   let v='';try{v=localStorage.getItem('fin.demo.ver')||''}catch(e){}
@@ -1457,7 +1564,7 @@ function noH2(h){return h.replace(/^<h2>[^<]*<\/h2>/,'')}
 function settingsView(){
   const app='<p class="lbl sxlbl">Theme</p>'+noH2(themeUI())+'<p class="lbl sxlbl">Style</p><div class="themes">'+STYLES.map(t=>'<button data-a="style" data-v="'+t[0]+'" aria-pressed="'+(STYLE===t[0])+'"><i style="background:'+t[2]+';border-color:'+t[3]+'"></i>'+t[1]+'</button>').join('')+'</div>';
   const hs=(safeUI()+bcUI()).replace(/<h2>/g,'<h3>').replace(/<\/h2>/g,'</h3>');
-  const data=(PROFILE!=='personal'?'<button class="sec" data-a="resetdemo" style="margin-right:8px">Reset demo data</button>':'')+'<button class="sec" data-a="clear" style="color:var(--bad)">'+(clearArm?'Tap again to erase everything':'Clear all data')+'</button>';
+  const data=(PROFILE!=='personal'?'<button class="sec" data-a="resetdemo" style="margin-right:8px">Reset demo data</button><button class="sec" data-a="clear" style="color:var(--bad)">'+(clearArm?'Tap again to erase everything':'Clear all data')+'</button>':'<p class="lbl clrline">'+(S.url?'Erases everything on this device and in your connected Google Sheet: entries, bills, goals, plans, favorites, budgets, categories and Cash.':'Erases everything on this device: entries, bills, goals, plans, favorites, budgets, categories and Cash.')+'</p><button class="sec clrbtn" data-a="clear">Clear all data</button>');
   let h='<div class="sth"><div style="display:flex;align-items:center;gap:4px"><button class="backbtn" data-a="setback" aria-label="Back to Stats">‹</button><h1 class="ttl">Settings</h1></div></div><div style="border-top:1px solid var(--line)"></div>';
   const TL={auto:'Auto',light:'Light',gray:'Gray',dark:'Black'},stl=(STYLES.find(x=>x[0]===STYLE)||STYLES[0])[1];
   h+=sxSec('set','appear','Appearance',app,(TL[theme]||'Auto')+' · '+stl);
@@ -1468,7 +1575,7 @@ function settingsView(){
   h+=sxSec('set','backup','Backup and restore',noH2(backupUI()),'Download or restore');
   h+=sxSec('set','prof','Profile',noH2(profBar()),PROFILE==='personal'?'Personal':'Demo (sandbox)');
   h+=sxSec('set','data','Data',data,PROFILE==='personal'?'Clear all data':'Reset demo or clear all data');
-  return h+installNote()+'<p class="ver">Ledger '+APP_VER+'</p>';
+  return h+installNote()+'<p class="ver">Ledger '+APP_VER+'</p>'+(clrOpen&&PROFILE==='personal'?clrSheet():'');
 }
 const DEFC={expense:['Food','Transport','Bills','Shopping','Health','Other'],income:['Salary','Other income'],col:{Food:'#0B8F7A',Transport:'#D98A2B',Bills:'#4A7BD0',Shopping:'#C4547A',Health:'#8A6FD1',Other:'#7A8A84',Salary:'#2E9E5B','Other income':'#2E9E5B'}};
 const PROT=['Bills','Other','Other income','Savings'],SWATCH=['#0B8F7A','#D98A2B','#4A7BD0','#C4547A','#8A6FD1','#7A8A84','#2E9E5B','#C9A227','#D2552E','#2B9BB5','#8C5A3C','#6B7A2E'];
@@ -1527,7 +1634,7 @@ function catUI(){
   }
   return h;
 }
-function backupData(){return {app:'ledger',ver:1,profile:PROFILE,at:today(),bankcash:bcGet(),paymethods:payCustom(),tx:tx,bills:bills,budgets:budgets,goals:goals,recur:recur,plans:plans,favs:favs,cats:catsObj()}}
+function backupData(){return {app:'ledger',ver:1,profile:PROFILE,at:today(),bankcash:bcGet(),paymethods:payCustom(),tx:tx,bills:bills,budgets:budgets,goals:goals,recur:recur,plans:plans,favs:favs,cats:catsObj(),pays:pays}}
 function loadPending(text){
   try{const d=JSON.parse(text);if(!d||d.app!=='ledger'||!Array.isArray(d.tx))throw 0;pend={d:d,at:d.at||'unknown date',n:d.tx.filter(t=>!t.del).length,b:(d.bills||[]).length};render(true)}
   catch(e){pend=null;toast('That is not a Ledger backup')}
@@ -1539,7 +1646,7 @@ function backupUI(){
   if(pend)h+='<div class="bedit" style="margin-top:10px"><p style="margin:0">Backup from '+esc(pend.at)+': '+pend.n+' entries, '+pend.b+' bills. This replaces your current '+(PROFILE==='personal'?'personal':'demo')+' data.</p><button class="pri" data-a="dorestore">Replace current data</button><button class="sec" data-a="rcancel">Cancel</button></div>';
   return h;
 }
-window.addEventListener('popstate',e=>{if(calOpen||detOpen){if(calOpen)calOpen=false;else detOpen=false;try{history.pushState({v:view},'')}catch(x){}render(true);return}if(bcOpen){bcOpen=false;bcAmt='';try{history.pushState({v:view},'')}catch(x){}render(true);return}const v=e.state&&e.state.v;popping=true;view=v||'home';editBud=null;render(true);popping=false});
+window.addEventListener('popstate',e=>{if(clrOpen||payPrompt){clrOpen=false;payPrompt=null;try{history.pushState({v:view},'')}catch(x){}render(true);return}if(calOpen||detOpen){if(calOpen)calOpen=false;else detOpen=false;try{history.pushState({v:view},'')}catch(x){}render(true);return}if(bcOpen){bcOpen=false;bcAmt='';try{history.pushState({v:view},'')}catch(x){}render(true);return}const v=e.state&&e.state.v;popping=true;view=v||'home';editBud=null;render(true);popping=false});
 try{history.replaceState({v:'home'},'')}catch(e){}
 const mbet=(f,t)=>(+t.slice(0,4)-+f.slice(0,4))*12+(+t.slice(5)-+f.slice(5));
 const PRE=[0,1,2,3,6,12];
@@ -1717,6 +1824,7 @@ function hashConnect(){
   view='sync';render();connectFlow(d.u,d.t);
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)closeOverlays()});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='clrin')e.preventDefault()});
 document.addEventListener('pointerdown',e=>{const k=e.target.closest&&e.target.closest('[data-a="key"][data-v="<"]');if(!k)return;clearTimeout(holdT);holdFired=false;holdT=setTimeout(()=>{holdFired=true;setAmtC(0);updAmt()},450)});
 ['pointerup','pointercancel','pointerleave'].forEach(n=>document.addEventListener(n,()=>{clearTimeout(holdT)},true));
 let tmpName='',tmpUrl='',tmpCode='',tmpKey='',tmpPw='',tmpNpw='',pwShow=false,syncMode='re',scriptShow=false,codeShow=false,discArm=false;
@@ -1771,11 +1879,33 @@ function syncPage(){
   return h;
 }
 let pendConn=null;
-const cfgData=()=>({bills:bills,budgets:budgets,goals:goals,recur:recur,plans:plans,favs:favs,cats:catsObj()});
+const cfgData=()=>({bills:bills,budgets:budgets,goals:goals,recur:recur,plans:plans,favs:favs,cats:catsObj(),pays:pays});
 function unsynced(){return !!S.url&&!!S.dirtyAt&&S.dirtyAt>=(S.syncedAt||0)}
 function hasLocalCfg(){return !!(bills.length||goals.length||plans.length||favs.length||recur.length||Object.keys(budgets).length)}
+function eraseAll(){tx.forEach(t=>{if(!t.del){t.del=1;t.upd=Date.now()}});bills=[];budgets={};goals=[];recur=[];plans=[];favs=[];pays=[];clearLocalExtras();saveB();save()}
+const CLR_PHRASE="I'm aware that I'm deleting my data";
+function clrNorm(x){return String(x||'').replace(/[\u2018\u2019\u02BC\u0060\u00B4]/g,"'").replace(/\s+/g,' ').trim().toLowerCase()}
+function clrMatch(x){return clrNorm(x)===clrNorm(CLR_PHRASE)}
+let clrOpen=false,clrTxt='';
+function clrCounts(){const n=live().length,cc=CATS.expense.filter(c=>!DEFC.expense.includes(c)&&c!=='Savings').length+CATS.income.filter(c=>!DEFC.income.includes(c)).length,pl=(a,s1,s2)=>a+' '+(a===1?s1:s2);
+  return [pl(n,'entry','entries'),pl(bills.length,'bill','bills'),pl(goals.length,'goal','goals'),pl(plans.length,'plan','plans'),pl(favs.length,'favorite','favorites'),pl(Object.keys(budgets).length,'budget','budgets'),pl(cc,'custom category','custom categories'),pl(pays.length,'paycheck plan','paycheck plans'),'Cash RM '+fmt(bcGet().cash/100),pl(payCustom().length,'custom payment method','custom payment methods')].join(' · ')}
+function clrSheet(){
+  const con=!!S.url;
+  return '<div class="shwrap" id="clrsheet"><div class="shbg" data-a="clrclose"></div><div class="sheet clrs" role="dialog" aria-modal="true" aria-labelledby="clrttl"><i class="grab" aria-hidden="true"></i>'
+   +'<h2 id="clrttl" class="clrttl">'+(con?'Erase everything?':'Erase everything on this device?')+'</h2>'
+   +'<p class="lbl clrtx">This can\'t be undone. Download a backup first if you might want it back.</p>'
+   +'<div class="clrbox">'+esc(clrCounts())+'</div>'
+   +(con?'<p class="lbl clrg">Your Google Sheet is connected: on the next sync these entries and settings are deleted from the Sheet too.</p>':'')
+   +'<button class="sec clrbk" data-a="backup">Download backup</button>'
+   +'<label class="clrlab" for="clrin">Type <b>'+esc(CLR_PHRASE)+'</b> to confirm</label>'
+   +'<input id="clrin" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="'+esc(CLR_PHRASE)+'" value="'+esc(clrTxt)+'"'+(clrMatch(clrTxt)?' class="ok"':'')+'>'
+   +'<p class="clrok" id="clrok" aria-live="polite">'+(clrMatch(clrTxt)?'Matches':'')+'</p>'
+   +'<button class="clrgo" data-a="clrgo" id="clrgo"'+(clrMatch(clrTxt)?' aria-disabled="false"':' disabled aria-disabled="true"')+'>Erase everything</button>'
+   +'<button class="lnk clrno" data-a="clrclose">Cancel</button></div></div>';
+}
+function clrUpd(){const i=document.getElementById('clrin'),g=document.getElementById('clrgo'),o=document.getElementById('clrok');if(!i||!g)return;const m=clrMatch(i.value);g.disabled=!m;g.setAttribute('aria-disabled',String(!m));i.classList.toggle('ok',m);if(o)o.textContent=m?'Matches':''}
 function clearData(){
-  tx=[];bills=[];budgets={};goals=[];recur=[];plans=[];favs=[];applyCats(null);cfgUpd=0;persist();persistCfg();
+  tx=[];bills=[];budgets={};goals=[];recur=[];plans=[];favs=[];pays=[];applyCats(null);cfgUpd=0;persist();persistCfg();
   fq={q:'',cat:'',type:'',pay:'',min:'',max:'',all:false};ym=curKey;draft={type:'expense',amt:'',cat:'Food',note:'',date:today()};
 }
 function clearLocalExtras(){try{localStorage.removeItem(K('bankcash'));localStorage.removeItem(K('paymethods'))}catch(e){}pmEd=null;if(draft.pay&&!payList([]).includes(draft.pay)&&!draft.edit)draft.pay=''}
@@ -1859,7 +1989,7 @@ function planView(){
   }).join(''):emptyBox('Start a savings goal','Set a target, like an emergency fund or a holiday.','newgoal','Add a goal');
   // repeating
   const rb=recur.length?recur.map(r=>'<div class="rw fr"><span>'+esc(r.note||r.cat)+' <span class="lbl">on day '+r.day+'</span></span><span>'+(r.type==='income'?'+':'−')+fmt(r.amt/100)+' <button class="sec" style="padding:2px 10px;font-size:13px" data-a="stoprec" data-id="'+r.rid+'">Stop</button></span></div>').join(''):'<p class="lbl">Tick “Repeat every month” when adding an entry, like salary or a subscription.</p>';
-  let h=monthBar()+'<h1 class="ttl" style="margin-top:14px">Plan</h1>';
+  let h=monthBar()+'<h1 class="ttl" style="margin-top:14px">Plan</h1>'+payCard();
   h+=acc('plans','Planned purchases',mp.length?mp.length+' · RM '+fmt(pTot/100):'None yet',pb,pTot?Math.round((pTot-pOpen)/pTot*100):null,false);
   h+=acc('budgets','Budgets',tb?pu(tb)+' budgeted':'Not set',bb,tb?Math.min(100,Math.round(sb/tb*100)):null,sb>tb);
   h+=acc('forecast','Month-end forecast',fc?'Projected balance '+(fc.pb<0?'-':'')+'RM '+fmt(Math.abs(fc.pb)/100):'Current month only',fb);
@@ -1867,6 +1997,58 @@ function planView(){
   h+=acc('repeat','Repeating entries',recur.length?recur.length+' repeating':'None',rb);
   return h;
 }
+const PKIND=['bills','buy','budget','goal','own'];
+function monthInc(k){return sum(inM(k),'income')}
+function payGet(k){return pays.find(x=>x.m===k)||null}
+function payPrev(k){return pays.filter(x=>x.m<k).sort((a,b)=>a.m<b.m?1:-1)[0]||null}
+function payLive(k){const inc=monthInc(k),ub=bills.filter(b=>inBill(b,k)&&!(b.paid&&b.paid[k])),op=plans.filter(x=>x.m===k&&!x.done),bc=CATS.expense.filter(c=>bLim(c,inc)>0);
+  return {bills:ub.reduce((s,b)=>s+b.amt,0),nb:ub.length,buy:op.reduce((s,x)=>s+x.amt,0),nbuy:op.length,budget:bc.reduce((s,c)=>s+bLim(c,inc),0),nbud:bc.length}}
+function goalNeed(g,k){if(!g.by||g.saved>=g.target)return 0;const [y,m]=g.by.split('-').map(Number),[cy,cm]=k.split('-').map(Number),ml=Math.max(1,(y-cy)*12+(m-cm)+1);return Math.round((g.target-g.saved)/ml)}
+function payLines(k,p){const L=payLive(k),out=[{kind:'bills',name:'Bills due',amt:L.bills},{kind:'buy',name:'Planned purchases',amt:L.buy},{kind:'budget',name:'Budgets',amt:L.budget}];let gi=0;
+  (p.lines||[]).forEach(l=>{if(l.kind==='goal'){const g=goals.find(x=>x.id===l.id);out.push({kind:'goal',name:g?g.name:l.name,amt:l.amt|0,gi:gi++})}else if(l.kind==='own')out.push({kind:'own',name:l.name,amt:l.amt|0})});return out}
+function pcVar(l){return l.kind==='goal'?(l.gi%2?'var(--pc-goal2)':'var(--pc-goal)'):'var(--pc-'+l.kind+')'}
+function payCard(){
+  const k=ym,inc=monthInc(k),p=payGet(k);
+  if(!p&&!inc)return '<section class="payc" aria-label="Paycheck"><div class="payh"><b>Paycheck</b><span class="lbl">'+esc(mlabel(k))+'</span></div><p class="lbl" style="margin:0">No income yet this month. Add your pay to plan where it goes.</p><button class="sec payb" data-a="nav" data-v="add" data-t="income">Add income</button></section>';
+  if(!p)return '<section class="payc" aria-label="Paycheck"><div class="payh"><b>Paycheck</b><span class="lbl">'+esc(mlabel(k))+'</span></div><p class="paybig">RM '+fmt(inc/100)+'</p><p class="lbl" style="margin:0">received this month · not planned yet</p><p class="paytx">Decide where it goes: bills, purchases, budgets, goals. See what is left to spend freely.</p><button class="pri payb" data-a="payplan" data-v="'+k+'">Plan this paycheck</button></section>';
+  const ls=payLines(k,p).filter(l=>l.amt>0),asg=ls.reduce((s,l)=>s+l.amt,0),free=p.inc-asg,tot=Math.max(p.inc,asg,1),more=inc-(p.got==null?p.inc:p.got);
+  return '<section class="payc" aria-label="Paycheck plan"><div class="payh"><b>Paycheck plan</b><span class="lbl">'+esc(mlabel(k))+'</span></div>'
+   +'<p class="lbl" style="margin:0">RM '+fmt(p.inc/100)+' received · RM '+fmt(asg/100)+' assigned</p>'
+   +'<div class="pcbar" role="img" aria-label="Plan split: '+esc(ls.map(l=>l.name+' RM '+fmt(l.amt/100)).join(', ')+(free>0?', free RM '+fmt(free/100):''))+'">'+ls.map(l=>'<i style="flex:'+l.amt+';background:'+pcVar(l)+'"></i>').join('')+(free>0?'<i class="pcfree" style="flex:'+free+'"></i>':'')+'</div>'
+   +'<div class="pcleg">'+ls.map(l=>'<div class="pcrow"><i style="background:'+pcVar(l)+'"></i><span>'+esc(l.name)+'</span><b>'+fmt(l.amt/100)+'</b></div>').join('')
+   +'<div class="pcrow pctot"><i class="pcfree"></i><span>'+(free<0?'Over by':'Free to spend')+'</span><b class="'+(free<0?'pcbad':'pcok')+'">'+fmt(Math.abs(free)/100)+'</b></div></div>'
+   +(more>0?'<div class="pcmore"><span>RM '+fmt(more/100)+' more income received since this plan</span><button class="sec" data-a="payplan" data-v="'+k+'" data-u="1">Update</button></div>':'')
+   +'<button class="sec payb" data-a="payplan" data-v="'+k+'">Edit plan</button></section>';
+}
+let pp=null,payPrompt=null;
+function payNot(){try{return JSON.parse(localStorage.getItem(K('paynot'))||'[]')}catch(e){return []}}
+function payOpen(k,upd){const p=payGet(k),src=p||payPrev(k),inc=monthInc(k);
+  const gl={};goals.forEach(g=>{const l=src&&(src.lines||[]).find(x=>x.kind==='goal'&&x.id===g.id);gl[g.id]=l?(l.amt/100).toFixed(2):(goalNeed(g,k)?(goalNeed(g,k)/100).toFixed(2):'')});
+  const own=(src?(src.lines||[]).filter(x=>x.kind==='own'):[]).map(x=>({id:x.id,name:x.name,amt:(x.amt/100).toFixed(2)}));
+  pp={m:k,inc:((p&&!upd?p.inc:inc)/100).toFixed(2),goals:gl,own:own};view='paycheck';render()}
+function ppC(x){const n=Math.round(parseFloat(String(x||'').replace(/,/g,''))*100);return isFinite(n)&&n>0?n:0}
+function ppUn(){return ppC(pp.inc)-payLive(pp.m).bills-payLive(pp.m).buy-payLive(pp.m).budget-Object.values(pp.goals).reduce((s,v)=>s+ppC(v),0)-pp.own.reduce((s,o)=>s+ppC(o.amt),0)}
+function ppFoot(){const u=ppUn();return '<span class="lbl">'+(u<0?'Over by':'Unassigned')+'</span><b class="'+(u<0?'pcbad':'pcok')+'">RM '+fmt(Math.abs(u)/100)+'</b>'}
+function payInput(t){if(!pp)return;const id=t.dataset.f;if(id==='inc')pp.inc=t.value;else if(id==='g')pp.goals[t.dataset.id]=t.value;else if(id==='on'||id==='oa'){const o=pp.own.find(x=>String(x.id)===t.dataset.id);if(o){if(id==='on')o.name=t.value;else o.amt=t.value}}const f=document.getElementById('ppfoot');if(f)f.innerHTML=ppFoot()}
+function payView(){
+  if(!pp){view='plan';return planView()}
+  const k=pp.m,L=payLive(k),inc=monthInc(k),n=(x,a,b)=>x+' '+(x===1?a:b),dot=v=>'<i class="pcdot" style="background:'+v+'"></i>';
+  const amtIn=(f,val,id,lab)=>'<input class="ppin" type="text" inputmode="decimal" data-f="'+f+'"'+(id!=null?' data-id="'+id+'"':'')+' aria-label="'+esc(lab)+'" value="'+esc(val)+'" placeholder="0.00">';
+  const ro=(kind,name,sub,v)=>'<div class="pprow"><div class="ppnm"><b>'+dot('var(--pc-'+kind+')')+esc(name)+'</b><span class="lbl">'+esc(sub)+'</span></div><b class="ppv">'+fmt(v/100)+'</b></div>';
+  let h='<div class="ppl"><div class="pphd"><button class="backbtn" data-a="payback" aria-label="Back to Plan">‹</button><h1 class="ttl">Plan this paycheck</h1></div>'
+   +'<p class="lbl" style="margin:0 0 10px">'+esc(mlabel(k))+'. Pay is counted from your income entries.</p>'
+   +'<div class="pprow"><div class="ppnm"><b>Income to plan</b></div>'+amtIn('inc',pp.inc,null,'Income to plan')+'</div>'
+   +'<p class="lbl" style="margin:4px 0 0">Income entries RM '+fmt(inc/100)+' · edit to plan only part of it</p>'
+   +'<p class="lbl ppsec">From your app (change them in Bills, Plan, Budgets)</p>'
+   +ro('bills','Bills due',n(L.nb,'unpaid bill','unpaid bills'),L.bills)+ro('buy','Planned purchases',n(L.nbuy,'item still to buy','items still to buy'),L.buy)+ro('budget','Budgets',n(L.nbud,'category','categories'),L.budget);
+  if(goals.length){h+='<p class="lbl ppsec">Goals</p>'+goals.map((g,i)=>{const nd=goalNeed(g,k);return '<div class="ppg"><div class="pprow"><div class="ppnm"><b>'+dot(i%2?'var(--pc-goal2)':'var(--pc-goal)')+esc(g.name)+'</b><span class="lbl">'+(nd?'needs RM '+fmt(nd/100)+' a month':'no target month set')+'</span></div>'+amtIn('g',pp.goals[g.id]||'',g.id,g.name+' amount')+'</div>'
+    +'<div class="ppchips">'+['10','20','30'].map(x=>'<button class="ppchip" data-a="ppchip" data-v="'+x+'" data-id="'+g.id+'" aria-label="Set '+esc(g.name)+' to '+x+'% of income">'+x+'%</button>').join('')+'<button class="ppchip" data-a="ppchip" data-v="rest" data-id="'+g.id+'" aria-label="Set '+esc(g.name)+' to the rest">Rest</button></div></div>'}).join('')}
+  h+='<p class="lbl ppsec">Your own lines</p>'+pp.own.map(o=>'<div class="pprow ppown">'+dot('var(--pc-own)')+'<input class="ppname" type="text" data-f="on" data-id="'+o.id+'" aria-label="Line name" placeholder="Name, like Family allowance" value="'+esc(o.name)+'">'+amtIn('oa',o.amt,o.id,(o.name||'Line')+' amount')+'<button class="ppx" data-a="ppdel" data-id="'+o.id+'" aria-label="Remove '+esc(o.name||'line')+'">×</button></div>').join('')
+   +'<button class="sec ppadd" data-a="ppadd">Add a line</button></div>'
+   +'<div class="ppbar"><div class="ppfoot" id="ppfoot" aria-live="polite">'+ppFoot()+'</div><button class="pri" data-a="ppsave">Save plan</button></div>';
+  return h;
+}
+function payPromptSheet(){if(!payPrompt)return '';return '<div class="shwrap" id="paysheet"><div class="shbg" data-a="paynot"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="payttl"><i class="grab" aria-hidden="true"></i><h2 id="payttl" style="margin:0">'+esc(payPrompt.cat)+' added: RM '+fmt(payPrompt.amt/100)+'</h2><p class="lbl" style="margin:0">Plan where this paycheck goes? It takes a minute, and you can change it later in Plan.</p><button class="pri" data-a="payplan" data-v="'+payPrompt.m+'">Plan this paycheck</button><button class="sec" data-a="paynot">Not now</button></div></div>'}
 function goalForm(){
   return '<h1 class="ttl">'+(gd.id?'Edit goal':'New goal')+'</h1><div class="stack">'
   +'<input id="gname" placeholder="Emergency fund" aria-label="Goal name" value="'+esc(gd.name)+'">'
@@ -1915,7 +2097,7 @@ async function sync(){
     if(S.sid&&j.sid&&j.sid!==S.sid){setStatus('This script now points to a different Google Sheet. Log out and log in again.');return}
     if(!S.sid&&j.sid)S.sid=j.sid;
     j.rows.forEach(n=>{const l=tx.find(t=>t.id===n.id);if(!l)tx.push(n);else if(n.upd>=l.upd)Object.assign(l,n)});
-    if(j.cfg){const d=j.cfg.data||{};bills=d.bills||[];budgets=d.budgets||{};goals=d.goals||[];recur=d.recur||[];plans=d.plans||[];if(d.cats)applyCats(d.cats);favs=d.favs||[];cfgUpd=j.cfg.upd;persistCfg();S.cfgKnown=cfgUpd;if(sendCfg)toast('Settings changed on another device were kept')}
+    if(j.cfg){const d=j.cfg.data||{};bills=d.bills||[];budgets=d.budgets||{};goals=d.goals||[];recur=d.recur||[];plans=d.plans||[];if(d.cats)applyCats(d.cats);favs=d.favs||[];pays=Array.isArray(d.pays)?d.pays:[];cfgUpd=j.cfg.upd;persistCfg();S.cfgKnown=cfgUpd;if(sendCfg)toast('Settings changed on another device were kept')}
     else if(sendCfg){const ver=j.cfgVer||cu;S.cfgKnown=ver;if(cfgUpd===cu){cfgUpd=ver;persistCfg()}}
     persist();S.cursor=j.cursor;S.pushed=start;S.syncedAt=start;saveS();
     S.lastAt=Date.now();if(j.url)S.sheetUrl=j.url;if(j.name)S.sheetName=j.name;if(j.owner)S.owner=j.owner;saveS();
