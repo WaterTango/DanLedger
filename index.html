@@ -526,6 +526,28 @@ nav [aria-current="true"]{background:color-mix(in srgb,var(--acc) 8%,transparent
 .paccbar{display:block;height:6px;border-radius:2px;background:var(--line);overflow:hidden;margin:-4px 0 12px}
 .paccbar i{display:block;height:100%;background:var(--pc-budget);border-radius:2px}
 [data-style="bold"] .payc{background:#F7E6C4;border:0;border-radius:var(--r);padding:14px;margin:0 0 6px}
+
+#detsheet .sheet.detsh{display:flex;flex-direction:column;gap:0;padding:0;max-height:min(88vh,calc(var(--vvh,100vh) - 8px));overflow:hidden}
+.dethd{flex:none;padding:12px 16px 4px;display:flex;flex-direction:column;gap:8px}
+#detttl:focus{outline:none}
+#detttl:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.detbody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:6px 16px calc(36px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.dlab{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:6px}
+.dlab label{font-size:15px;font-weight:700}
+.dlab .lbl{font-size:13px}
+#note.notein{min-height:56px;font-size:18px;font-weight:600;border-radius:var(--r);padding:0 14px}
+#note.notein::placeholder{font-weight:400;color:var(--mut)}
+#note.notein:focus{border:2px solid var(--acc);padding:0 13px}
+#sugg{gap:6px;margin:-6px 0 0}
+#sugg:empty{display:none}
+#sugg button{position:relative;isolation:isolate;min-height:44px;border:0;background:none;padding:0 12px;font-size:13px;font-weight:600;color:var(--ink)}
+#sugg button::before{content:'';position:absolute;left:0;right:0;top:6px;bottom:6px;border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);z-index:-1}
+.daterow{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:0 14px;border:1px solid var(--line);background:var(--card);border-radius:var(--r);color:var(--ink);text-align:left}
+.daterow .lbl{flex:1;font-size:15px}
+.daterow b{font-size:16px;font-weight:700}
+.daterow svg{flex:none;width:18px;height:18px;fill:none;stroke:var(--mut);stroke-width:2}
+#detbody .achips{flex-wrap:wrap}
+#detbody .achips button{min-height:44px}
 .bccancel{width:100%;min-height:48px;padding:14px;border-radius:var(--r);font-weight:500}
 .ver{text-align:center;color:var(--mut);font-size:12px;margin:28px 0 0}
 .htop{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -735,11 +757,12 @@ function detRow(){
 }
 function detSheet(){
   const ex=draft.type==='expense';
-  return '<div class="shwrap" id="detsheet"><div class="shbg" data-a="detclose"></div><div class="sheet" role="dialog" aria-label="Details"><i class="grab" aria-hidden="true"></i><div class="shhead"><h2 style="margin:0">Details</h2><button class="lnk shdone" data-a="detclose">Done</button></div>'
-   +'<label class="lbl dl">Note<input id="note" type="text" placeholder="Note (optional)" value="'+esc(draft.note)+'"></label><div class="chips" id="sugg"></div>'
-   +'<div><p class="lbl" style="margin:0 0 4px">Date</p><button class="sec datebtn" data-a="calopen" aria-haspopup="dialog">'+esc(longDate(draft.date))+'</button></div>'
+  return '<div class="shwrap" id="detsheet"><div class="shbg" data-a="detclose"></div><div class="sheet detsh" role="dialog" aria-modal="true" aria-labelledby="detttl"><div class="dethd"><i class="grab" aria-hidden="true"></i><div class="shhead"><h2 id="detttl" tabindex="-1" style="margin:0">Details</h2><button class="lnk shdone" data-a="detclose">Done</button></div></div>'
+   +'<div class="detbody" id="detbody">'
+   +'<div class="dlab"><label for="note">Note</label><span class="lbl" id="notehelp">optional, but it helps you remember</span></div><input id="note" class="notein" type="text" aria-describedby="notehelp" placeholder="What was this for?" value="'+esc(draft.note)+'"><div class="chips" id="sugg"></div>'
+   +'<div><p class="lbl" style="margin:0 0 4px">Date</p><button class="daterow datebtn" data-a="calopen" aria-haspopup="dialog" aria-label="Date, '+esc(longDate(draft.date))+'. Change date"><span class="lbl">Date</span><b>'+esc(longDate(draft.date))+'</b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>'
    +(ex?'<div>'+payChips()+'</div>'+(goals.length?'<div>'+goalChips()+'</div>':''):'')
-   +'</div></div>';
+   +'</div></div></div>';
 }
 function calSheet(){
   const k=calYm||draft.date.slice(0,7),y=+k.slice(0,4),m=+k.slice(5),first=(new Date(y,m-1,1).getDay()+6)%7,n=dim(k),t=today(),cells=[];
@@ -821,10 +844,12 @@ function render(keep){
   if(view!=='sync')closeOverlays();
   lastView=view;
   document.body.classList.toggle('demo',PROFILE!=='personal');
+  const dbS=document.getElementById('detbody'),dbT=dbS?dbS.scrollTop:0;
   $('#app').innerHTML=topBadge()+(view==='home'?bcSheet()+payPromptSheet():'')+({home:home,add:add,bills:billsView,billform:billForm,plan:planView,goalform:goalForm,sync:syncPage,stats:stats,settings:settingsView,paycheck:payView,calc:calcView})[view]();
   const vv=view==='billform'?'bills':view==='goalform'?'plan':view==='paycheck'?'plan':view==='sync'||view==='settings'?'stats':view==='calc'?'add':view,nd=dueList().length;
   document.querySelectorAll('nav button').forEach(b=>{b.setAttribute('aria-current',String(b.dataset.v===vv));if(b.dataset.v==='bills')b.querySelector('.nl').textContent='Bills'+(nd?' ('+nd+')':'')});
   if(!keep)window.scrollTo(0,0);
+  const dbN=document.getElementById('detbody');if(dbN){suggest(draft.note||'');dbN.scrollTop=dbT;vvFit()}
 }
 function sample(){
   applyCats(null);CATS.expense.push('Savings');CATCOL.Savings='#2E9E5B';
@@ -937,7 +962,7 @@ document.addEventListener('click',e=>{
     updAmt();
   }
   else if(a==='amtclr'){setAmtC(0);updAmt();const k=document.querySelector('[data-a="key"][data-v="1"]');if(k&&k.focus)k.focus()}
-  else if(a==='detopen'){detOpen=true;render(true);const i=document.getElementById('note');if(i)i.focus()}
+  else if(a==='detopen'){detOpen=true;render(true);const h=document.getElementById('detttl');if(h)h.focus({preventScroll:true})}
   else if(a==='detclose'){detOpen=false;calOpen=false;render(true);const r=document.getElementById('detrow');if(r)r.focus()}
   else if(a==='calopen'){calOpen=true;calYm=draft.date.slice(0,7);render(true)}
   else if(a==='calnav'){calYm=shift(calYm||draft.date.slice(0,7),Number(v));render(true)}
@@ -1519,7 +1544,7 @@ function payChips(){
 }
 let statsTab='overview',revShow=false;
 const DEMO_VER=9;
-const APP_VER='v22'; // keep in step with sw.js cache ledger-vN
+const APP_VER='v23'; // keep in step with sw.js cache ledger-vN
 function ensureDemo(){
   if(PROFILE==='personal')return;
   let v='';try{v=localStorage.getItem('fin.demo.ver')||''}catch(e){}
@@ -1841,6 +1866,9 @@ function hashConnect(){
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)closeOverlays()});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='clrin')e.preventDefault()});
+function vvFit(){const w=document.getElementById('detsheet');if(!w)return;const vv=window.visualViewport;if(!vv){w.style.removeProperty('--vvh');return}const kb=Math.max(0,Math.round(window.innerHeight-(vv.height+vv.offsetTop)));w.style.bottom=kb+'px';w.style.setProperty('--vvh',Math.round(vv.height)+'px')}
+if(window.visualViewport){visualViewport.addEventListener('resize',()=>{vvFit();const f=document.activeElement;if(f&&f.closest&&f.closest('#detbody'))setTimeout(()=>{try{f.scrollIntoView({block:'nearest'})}catch(x){}},60)});visualViewport.addEventListener('scroll',vvFit)}
+document.addEventListener('focusin',e=>{const t=e.target;if(t&&t.closest&&t.closest('#detbody'))setTimeout(()=>{try{t.scrollIntoView({block:'nearest'})}catch(x){}},300)});
 document.addEventListener('pointerdown',e=>{const k=e.target.closest&&e.target.closest('[data-a="key"][data-v="<"]');if(!k)return;clearTimeout(holdT);holdFired=false;holdT=setTimeout(()=>{holdFired=true;setAmtC(0);updAmt()},450)});
 ['pointerup','pointercancel','pointerleave'].forEach(n=>document.addEventListener(n,()=>{clearTimeout(holdT)},true));
 let tmpName='',tmpUrl='',tmpCode='',tmpKey='',tmpPw='',tmpNpw='',pwShow=false,syncMode='re',scriptShow=false,codeShow=false,discArm=false;
