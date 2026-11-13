@@ -3436,6 +3436,52 @@ body.wnup #toast {
   margin: 2px 0 0;
   font-size: 14px
 }
+/* ===== v27: Changelog (#46) ===== */
+.clgrow svg {
+  transform: rotate(-90deg)
+}
+.clgsub {
+  margin: 2px 0 10px;
+  font-size: 13px
+}
+.clgcard {
+  margin-top: 8px;
+  padding: 12px 14px;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r)
+}
+.clgcard.latest {
+  border-color: var(--acc)
+}
+.clghd {
+  display: flex;
+  align-items: baseline;
+  gap: 0
+}
+.clghd b {
+  font-size: 16px
+}
+.clghd .newtag {
+  margin-left: 8px
+}
+.clgdt {
+  margin-left: auto;
+  font-size: 12px
+}
+.clgcard ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.45
+}
+.clgmore {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  font-weight: 600
+}
 </style>
 </head>
 <body>
@@ -3605,7 +3651,7 @@ function closeAcc() { stOpen = {};
   setOpen = {};
   accOpen = {};
   planOpen = false }
-const accTab = v => v === 'billform' ? 'bills' : v === 'goalform' ? 'plan' : v === 'calc' ? 'add' : v === 'sync' ? 'settings' : v;
+const accTab = v => v === 'billform' ? 'bills' : v === 'goalform' ? 'plan' : v === 'calc' ? 'add' : v === 'sync' || v === 'changelog' ? 'settings' : v;
 loadStyle();
 loadOpen();
 try { theme = localStorage.getItem('fin.theme') || 'light';
@@ -3854,6 +3900,19 @@ function bcMoney(n) { return (n < 0 ? '−' : '') + 'RM ' + fmt(Math.abs(n) / 10
 function bcPrev() { const c = bcGet().cash,
     L = bcLeft(),
     a = bcParse(bcAmt); let cash = c; if (a) cash = bcMode === 'wd' ? c + a : c - a; return { cash: cash, bank: L - cash, left: L, saved: c } }
+
+/* ===== CHANGELOG PAGE (#46) ===== */
+const CLOG_SHOW = 6;
+let clogAll = false;
+function clogDate(d) { return +d.slice(8) + ' ' + mshort(d.slice(0, 7)) }
+
+function clogView() {
+  const list = clogAll ? CHANGELOG : CHANGELOG.slice(0, CLOG_SHOW),
+    rest = CHANGELOG.slice(CLOG_SHOW);
+  return '<div class="sth"><div style="display:flex;align-items:center;gap:4px"><button class="backbtn" data-a="clogback" aria-label="Back to Settings">‹</button><h1 class="ttl">Changelog</h1></div></div><p class="lbl clgsub">What changed in each version. Newest first.</p>' +
+    list.map((c, i) => '<section class="clgcard' + (i ? '' : ' latest') + '" aria-label="' + esc(c.ver) + '"><div class="clghd"><b>' + esc(c.ver) + '</b>' + (i ? '' : '<span class="newtag">LATEST</span>') + '<span class="lbl clgdt">' + clogDate(c.date) + '</span></div><ul>' + c.lines.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul></section>').join('') +
+    (!clogAll && rest.length ? '<button class="sec clgmore" data-a="clogmore">Show older versions (' + rest[rest.length - 1].ver + ' – ' + rest[0].ver + ')</button>' : '');
+}
 
 /* ===== MONTHLY PDF REPORT (#45) =====
  * Built on the device, no library: a small PDF 1.4 writer using the built-in Helvetica fonts (WinAnsi,
@@ -4233,6 +4292,7 @@ function render(keep) {
   if (!/^\d{4}-\d{2}$/.test(ym)) ym = curKey;
   seenInit();
   if (wnShown && view !== 'home') wnDone(); // leaving Home counts as seen
+  if (view !== 'changelog') clogAll = false; // older versions close again after leaving the page
   if (view !== lastView && !popping) { try { history.pushState({ v: view }, '') } catch (e) {} }
   if (view !== lastView && accTab(view) !== accTab(lastView)) closeAcc();
   if (view !== 'sync') closeOverlays();
@@ -4240,8 +4300,8 @@ function render(keep) {
   document.body.classList.toggle('demo', PROFILE !== 'personal');
   const dbS = document.getElementById('detbody'),
     dbT = dbS ? dbS.scrollTop : 0;
-  $('#app').innerHTML = topBadge() + (view === 'home' ? bcSheet() + payPromptSheet() : '') + ({ home: home, add: add, bills: billsView, billform: billForm, plan: planView, goalform: goalForm, sync: syncPage, stats: stats, settings: settingsView, paycheck: payView, calc: calcView })[view]();
-  const vv = view === 'billform' ? 'bills' : view === 'goalform' ? 'plan' : view === 'paycheck' ? 'plan' : view === 'sync' || view === 'settings' ? 'stats' : view === 'calc' ? 'add' : view,
+  $('#app').innerHTML = topBadge() + (view === 'home' ? bcSheet() + payPromptSheet() : '') + ({ home: home, add: add, bills: billsView, billform: billForm, plan: planView, goalform: goalForm, sync: syncPage, stats: stats, settings: settingsView, paycheck: payView, calc: calcView, changelog: clogView })[view]();
+  const vv = view === 'billform' ? 'bills' : view === 'goalform' ? 'plan' : view === 'paycheck' ? 'plan' : view === 'sync' || view === 'settings' || view === 'changelog' ? 'stats' : view === 'calc' ? 'add' : view,
     nd = dueList().length;
   document.querySelectorAll('nav button').forEach(b => { b.setAttribute('aria-current', String(b.dataset.v === vv)); if (b.dataset.v === 'bills') b.querySelector('.nl').textContent = 'Bills' + (nd ? ' (' + nd + ')' : '') });
   if (!keep) window.scrollTo(0, 0);
@@ -4621,7 +4681,10 @@ document.addEventListener('click', e => {
       save();
       render();
       cashFlashEnd() });
-  } else if (a === 'pdf') { pdfGo(/^\d{4}-\d{2}$/.test(v) ? v : ym) } else if (a === 'pdfnow') { const nm = pdfNudgeMonth(); if (nm) pdfGo(nm.m) } else if (a === 'pdflater') { const f = pdfFlag();
+  } else if (a === 'clog') { view = 'changelog';
+    render() } else if (a === 'clogback') { if (history.state && history.state.v === 'changelog') { history.back() } else { view = 'settings';
+      render() } } else if (a === 'clogmore') { clogAll = true;
+    render(true) } else if (a === 'pdf') { pdfGo(/^\d{4}-\d{2}$/.test(v) ? v : ym) } else if (a === 'pdfnow') { const nm = pdfNudgeMonth(); if (nm) pdfGo(nm.m) } else if (a === 'pdflater') { const f = pdfFlag();
     f.later = today();
     pdfFlagSet(f);
     render(true) } else if (a === 'wnok') { wnDone();
@@ -5601,10 +5664,41 @@ function payChips() {
 let statsTab = 'overview',
   revShow = false;
 const DEMO_VER = 9;
-const APP_VER = 'v26';
+const APP_VER = 'v27'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
+/* Changelog (#46): newest first, plain words, 1–5 bullets (most important first). Every release adds
+ * its entry at the top; the What's new card reads CHANGELOG[0], so this is the one place to edit. */
+const CHANGELOG = [
+  { ver: 'v27', date: '2026-11-13', lines: ['Changelog added in Settings'] },
+  { ver: 'v26', date: '2026-11-13', lines: ['Monthly PDF report in Stats', 'Reminder to save it at month end'] },
+  { ver: 'v25', date: '2026-11-13', lines: ['Cash expenses now come off Cash', 'Visual style picker in Settings', 'What\'s new card after updates', 'CSV export fix for commas'] },
+  { ver: 'v24', date: '2026-11-13', lines: ['Behind-the-scenes cleanup, no changes for you'] },
+  { ver: 'v23', date: '2026-11-12', lines: ['Details sheet no longer pops up the keyboard', 'Bigger Note box', 'Date shown as a full-width row', 'Sheet stays above the keyboard'] },
+  { ver: 'v22', date: '2026-11-12', lines: ['Plan tab flat look', 'Sections start closed'] },
+  { ver: 'v21', date: '2026-11-12', lines: ['Paycheck planner', 'Clear all data now needs a typed phrase'] },
+  { ver: 'v20', date: '2026-11-12', lines: ['Bold blocks colour fixes', 'Category chips no longer cut off'] },
+  { ver: 'v19', date: '2026-11-12', lines: ['Softly rounded corners'] },
+  { ver: 'v18', date: '2026-11-12', lines: ['Fonts fixed for every style', 'Each style gets its own look', 'Section summaries in Stats and Settings'] },
+  { ver: 'v17', date: '2026-11-12', lines: ['4 visual styles', 'Stats redesign with quick tiles', 'Settings on its own page'] },
+  { ver: 'v16', date: '2026-11-12', lines: ['New Add screen layout', 'Banking-style amount keypad', 'Left this month on Add', 'Calendar date picker'] },
+  { ver: 'v15', date: '2026-11-11', lines: ['Log in by scanning a QR code', '"Connect" is now "Log in"'] },
+  { ver: 'v14', date: '2026-11-11', lines: ['Clear all data also resets Cash and payment methods', 'Install-as-app hint', 'App install fix'] },
+  { ver: 'v13', date: '2026-11-11', lines: ['Online banking app payment method', 'Add your own payment methods', 'Cancel button in Bank and cash'] },
+  { ver: 'v12', date: '2026-11-04', lines: ['Smaller, tidier Home rows', 'Bank worked out from Cash automatically', 'Withdraw and Deposit'] },
+  { ver: 'v11', date: '2026-11-04', lines: ['Bank and Cash on Home', 'Home list in capitals'] },
+  { ver: 'v10', date: '2026-11-03', lines: ['Home list text easier to read'] },
+  { ver: 'v9', date: '2026-11-03', lines: ['Add screen refresh', 'Light theme by default', 'Payment methods tidied up'] },
+  { ver: 'v8', date: '2026-11-02', lines: ['Home refresh with colour tags'] },
+  { ver: 'v7', date: '2026-11-02', lines: ['Plan titles layout fix'] },
+  { ver: 'v6', date: '2026-11-02', lines: ['Last sync time on Home'] },
+  { ver: 'v5', date: '2026-11-02', lines: ['Account and sync button back on Home'] },
+  { ver: 'v4', date: '2026-11-02', lines: ['Version number shown', 'Home redesign with search and filters', 'Delete button when editing', 'Planned purchases start collapsed'] },
+  { ver: 'v3', date: '2026-11-02', lines: ['New bottom bar with icons', 'Calc button on Add', 'Safe to spend card', 'Friendlier empty screens'] },
+  { ver: 'v2', date: '2026-11-02', lines: ['Clear form with Undo', 'Cancel and discard changes when editing'] },
+  { ver: 'v1', date: '2026-11-02', lines: ['First deployment'] }
+];
 /* What's new card (#44): rewritten every release from its user-visible items. lines [] = no card.
  * act.go is limited to WN_GO. Shown once per version (K('wnseen')), personal profile with history only. */
-const WHATS_NEW = { ver: 'v26', lines: ['Save a monthly PDF report from Stats'], act: null };
+const WHATS_NEW = { ver: CHANGELOG[0].ver, lines: CHANGELOG[0].lines.slice(0, 5), act: null }; // act: optional {label, go}
 const WN_GO = ['appearance', 'bankcash'];
 let wnShown = false;
 function wnNum(v) { return parseInt(String(v || '').replace(/^v/, ''), 10) || 0 }
@@ -5615,10 +5709,10 @@ function wnDone() { wnShown = false; try { localStorage.setItem(K('wnseen'), WHA
 
 function wnCard() {
   const a = WHATS_NEW.act && WN_GO.includes(WHATS_NEW.act.go) ? WHATS_NEW.act : null;
-  return '<section class="wncard" id="wncard" aria-labelledby="wnttl"><div class="wnhd"><h2 id="wnttl">Updated to ' + esc(WHATS_NEW.ver) + '<span class="newtag">NEW</span></h2><button class="wnx" data-a="wnok" aria-label="Close">×</button></div><ul>' + WHATS_NEW.lines.slice(0, 3).map(l => '<li>' + esc(l) + '</li>').join('') + '</ul><div class="wnbtns"><button class="pri" data-a="wnok">Got it</button>' + (a ? '<button class="sec" data-a="wngo" data-v="' + a.go + '">' + esc(a.label) + '</button>' : '') + '</div></section>';
+  return '<section class="wncard" id="wncard" aria-labelledby="wnttl"><div class="wnhd"><h2 id="wnttl">Updated to ' + esc(WHATS_NEW.ver) + '<span class="newtag">NEW</span></h2><button class="wnx" data-a="wnok" aria-label="Close">×</button></div><ul>' + WHATS_NEW.lines.slice(0, 5).map(l => '<li>' + esc(l) + '</li>').join('') + '</ul><div class="wnbtns"><button class="pri" data-a="wnok">Got it</button>' + (a ? '<button class="sec" data-a="wngo" data-v="' + a.go + '">' + esc(a.label) + '</button>' : '') + '</div></section>';
 }
 
-function wnFit() { const c = document.getElementById('wncard'); document.body.classList.toggle('wnup', !!c); if (c) document.body.style.setProperty('--wnh', c.offsetHeight + 'px') } // keep in step with sw.js cache ledger-vN
+function wnFit() { const c = document.getElementById('wncard'); document.body.classList.toggle('wnup', !!c); if (c) document.body.style.setProperty('--wnh', c.offsetHeight + 'px') }
 function ensureDemo() {
   if (PROFILE === 'personal') return;
   let v = '';
@@ -5766,6 +5860,7 @@ function settingsView() {
   h += sxSec('set', 'backup', 'Backup and restore', noH2(backupUI()), 'Download or restore');
   h += sxSec('set', 'prof', 'Profile', noH2(profBar()), PROFILE === 'personal' ? 'Personal' : 'Demo (sandbox)');
   h += sxSec('set', 'data', 'Data', data, PROFILE === 'personal' ? 'Clear all data' : 'Reset demo or clear all data');
+  h += '<section class="sxs"><h2 class="sxh"><button class="sxb clgrow" data-a="clog"><span class="sxt"><span class="sxn">Changelog</span><span class="sxsum">' + CHANGELOG[0].ver + ' · latest</span></span>' + CHEV + '</button></h2></section>';
   return h + installNote() + '<p class="ver">Ledger ' + APP_VER + '</p>' + (clrOpen && PROFILE === 'personal' ? clrSheet() : '');
 }
 
