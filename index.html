@@ -3397,6 +3397,45 @@ body.wnup main {
 body.wnup #toast {
   bottom: calc(85px + var(--wnh, 0px) + env(safe-area-inset-bottom, 0px))
 }
+/* ===== v26: PDF report (#45) ===== */
+.exrow {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px
+}
+.exrow .pri, .exrow .csvb {
+  flex: 1;
+  width: auto;
+  margin-top: 0;
+  min-height: 48px;
+  padding: 10px 8px;
+  font-weight: 600
+}
+.exrow .pdfb {
+  flex: 1.6;
+  white-space: nowrap
+}
+.exnote {
+  margin: 8px 0 0;
+  font-size: 12px
+}
+.nudgecard {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow)
+}
+.nudgecard h2 {
+  margin: 0;
+  font-size: 16px
+}
+.nudgecard p {
+  margin: 2px 0 0;
+  font-size: 14px
+}
 </style>
 </head>
 <body>
@@ -3782,7 +3821,7 @@ function statsOverview() {
     (rows.length && catView === 'pie' ? pie(rows) : rows.length ? rows.map(r => '<div class="cr"><div class="rw"><span>' + esc(r[0]) + '</span><span>' + fmt(r[1] / 100) + '</span></div><div class="bar"><i style="width:' + Math.round(r[1] / rows[0][1] * 100) + '%"></i></div></div>').join('') : emptyBox('No spending this month', 'Add an expense to see where your money goes.', 'nav', 'Add expense', 'add')), rows.length ? rows.slice(0, 2).map(r => esc(r[0]) + ' ' + Math.round(r[1] / tot * 100) + '%').join(' · ') : 'No spending this month');
   h += sxSec('st', 'trend', 'Last 12 months', '<div class="trend">' + vals.map((v, i) => '<div><i class="' + (i === 11 ? 'cur' : '') + '" style="height:' + Math.round(v / mx * 100) + '%" title="RM ' + fmt(v / 100) + '"></i><span>' + mshort(months[i]) + '</span></div>').join('') + '</div>', vals[vi] ? 'Highest: ' + mshort(months[vi]) + ' RM ' + fmt(vals[vi] / 100) : 'No spending yet');
   h += I.secs;
-  h += '<button class="sec csvb" data-a="csv">' + (showCsv ? 'Hide CSV' : 'Export CSV') + '</button>';
+  h += '<div class="exrow"><button class="pri pdfb" data-a="pdf" data-v="' + ym + '">PDF report · ' + mshort(ym) + ' ' + ym.slice(0, 4) + '</button><button class="sec csvb" data-a="csv">' + (showCsv ? 'Hide CSV' : 'Export CSV') + '</button></div><p class="lbl exnote">Uses the month selected above. Opens the share sheet on iPhone, saves to Downloads on Android.</p>';
   if (showCsv) h += '<textarea id="csvbox" rows="8" readonly style="margin-top:10px">' + esc(csv()) + '</textarea>';
   return h;
 }
@@ -3815,6 +3854,295 @@ function bcMoney(n) { return (n < 0 ? '−' : '') + 'RM ' + fmt(Math.abs(n) / 10
 function bcPrev() { const c = bcGet().cash,
     L = bcLeft(),
     a = bcParse(bcAmt); let cash = c; if (a) cash = bcMode === 'wd' ? c + a : c - a; return { cash: cash, bank: L - cash, left: L, saved: c } }
+
+/* ===== MONTHLY PDF REPORT (#45) =====
+ * Built on the device, no library: a small PDF 1.4 writer using the built-in Helvetica fonts (WinAnsi,
+ * English/Latin only; other characters print as "?"). Numbers come from reviewData() and the same
+ * filters Stats uses (spent excludes savings-linked entries; those show as "Saved to goals"). */
+const PDF_W = {
+  h: [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584],
+  b: [278, 333, 474, 556, 556, 889, 722, 238, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 333, 333, 584, 584, 584, 611, 975, 722, 722, 722, 722, 667, 611, 778, 722, 278, 556, 722, 611, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 333, 278, 333, 584, 556, 333, 556, 611, 556, 611, 556, 333, 611, 611, 278, 278, 556, 278, 889, 611, 611, 611, 611, 389, 556, 333, 611, 556, 778, 556, 556, 500, 389, 280, 389, 584]
+};
+const PDF_X = { 8211: 150, 8212: 151, 8216: 145, 8217: 146, 8220: 147, 8221: 148, 8226: 149, 8230: 133, 8364: 128, 8722: 45 };
+const PDF_WX = { 150: 556, 151: 1000, 145: 222, 146: 222, 147: 333, 148: 333, 149: 350, 133: 1000, 128: 556, 183: 278, 160: 278 };
+const PDF_H = 841.89,
+  PDF_NAVY = '#1F2A44',
+  PDF_INK = '#1A1A1A',
+  PDF_MUT = '#5A5F69';
+
+function pdfEnc(x) { let o = ''; for (const ch of String(x == null ? '' : x)) { let c = ch.codePointAt(0); if (PDF_X[c]) c = PDF_X[c];
+    else if (c === 9 || c === 10 || c === 13) c = 32;
+    else if (c < 32 || c > 255 || (c >= 127 && c < 160)) c = 63; o += String.fromCharCode(c) } return o }
+
+function pdfW(e, b, sz) { const t = PDF_W[b ? 'b' : 'h']; let w = 0; for (let i = 0; i < e.length; i++) { const c = e.charCodeAt(i);
+    w += c >= 32 && c <= 126 ? t[c - 32] : (PDF_WX[c] || 556) } return w * sz / 1000 }
+
+function pdfWrap(x, b, sz, max) { // returns encoded lines that fit max width
+  const words = pdfEnc(x).split(' '),
+    out = [];
+  let ln = '';
+  words.forEach(w => { while (pdfW(w, b, sz) > max) { let i = w.length; while (i > 1 && pdfW(w.slice(0, i), b, sz) > max) i--; if (ln) { out.push(ln);
+        ln = '' } out.push(w.slice(0, i));
+      w = w.slice(i) } const t = ln ? ln + ' ' + w : w; if (pdfW(t, b, sz) <= max) ln = t;
+    else { out.push(ln);
+      ln = w } });
+  out.push(ln);
+  return out.length ? out : [''];
+}
+
+function pdfFit(x, b, sz, max) { let e = pdfEnc(x); if (pdfW(e, b, sz) <= max) return e; while (e.length && pdfW(e + '\x85', b, sz) > max) e = e.slice(0, -1); return e + '\x85' }
+
+function pdfDoc() {
+  const pages = [];
+  let cur = null;
+  const n = v => (Math.round(v * 100) / 100).toString(),
+    col = h => { h = h.replace('#', ''); return [0, 2, 4].map(i => n(parseInt(h.substr(i, 2), 16) / 255)).join(' ') },
+    str = e => e.replace(/[\\()]/g, m => '\\' + m).replace(/[\x80-\xff]/g, m => '\\' + m.charCodeAt(0).toString(8));
+  const D = {
+    pages: pages,
+    page() { cur = [];
+      pages.push(cur); return D },
+    on(i) { cur = pages[i]; return D },
+    text(x, y, t, o) { o = o || {}; const e = o.enc ? t : pdfEnc(t),
+        sz = o.size || 10,
+        tc = o.tc || 0,
+        w = pdfW(e, o.bold, sz) + tc * e.length; let tx = x; if (o.align === 'right') tx = x - w; cur.push('BT /F' + (o.bold ? 2 : 1) + ' ' + n(sz) + ' Tf ' + n(tc) + ' Tc ' + col(o.color || PDF_INK) + ' rg ' + n(tx) + ' ' + n(PDF_H - y) + ' Td (' + str(e) + ') Tj ET') },
+    rect(x, y, w, h, c) { cur.push(col(c) + ' rg ' + n(x) + ' ' + n(PDF_H - y - h) + ' ' + n(w) + ' ' + n(h) + ' re f') },
+    line(x1, y, x2, w, c) { cur.push(col(c) + ' RG ' + n(w) + ' w ' + n(x1) + ' ' + n(PDF_H - y) + ' m ' + n(x2) + ' ' + n(PDF_H - y) + ' l S') },
+    build(title) {
+      const obj = [],
+        add = b => { obj.push(b); return obj.length };
+      add('<< /Type /Catalog /Pages 2 0 R >>');
+      add('');
+      add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+      add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+      add('<< /Producer (Ledger ' + APP_VER + ') /Title (' + str(pdfEnc(title)) + ') >>');
+      const kids = pages.map(p => { const c = p.join('\n'),
+          ci = add('<< /Length ' + c.length + ' >>\nstream\n' + c + '\nendstream'); return add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + ci + ' 0 R >>') });
+      obj[1] = '<< /Type /Pages /Kids [' + kids.map(k => k + ' 0 R').join(' ') + '] /Count ' + kids.length + ' >>';
+      let out = '%PDF-1.4\n%\xe2\xe3\xcf\xd3\n';
+      const off = [];
+      obj.forEach((b, i) => { off.push(out.length);
+        out += (i + 1) + ' 0 obj\n' + b + '\nendobj\n' });
+      const x = out.length;
+      out += 'xref\n0 ' + (obj.length + 1) + '\n0000000000 65535 f \n' + off.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('') + 'trailer\n<< /Size ' + (obj.length + 1) + ' /Root 1 0 R /Info 5 0 R >>\nstartxref\n' + x + '\n%%EOF\n';
+      return out;
+    }
+  };
+  return D;
+}
+
+function pdfDay(d, y) { const p = d.split('-').map(Number); return pad2(p[2]) + ' ' + new Date(p[0], p[1] - 1, 1).toLocaleDateString('en-GB', { month: 'short' }) + (y ? ' ' + p[0] : '') }
+
+function pdfMoney(c, br) { return br ? '(' + fmt(Math.abs(c) / 100) + ')' : (c < 0 ? '(' + fmt(-c / 100) + ')' : fmt(c / 100)) }
+
+function pdfPct(a, b) { if (!a) return '-'; const v = (b - a) / Math.abs(a) * 100; return (v > 0 ? '+' : v < 0 ? '-' : '') + Math.abs(v).toFixed(1) + '%' }
+
+function pdfStats(k) { // same numbers as Stats > Monthly review / Overview
+  const sy = ym;
+  ym = k;
+  let r;
+  try { r = reviewData() } finally { ym = sy }
+  const a = inM(k),
+    ex = a.filter(t => t.type === 'expense' && !t.goal),
+    by = {},
+    pb = {};
+  ex.forEach(t => { (by[t.cat] = by[t.cat] || [0, 0])[0]++;
+    by[t.cat][1] += t.amt; const p = t.pay || 'Not set';
+    (pb[p] = pb[p] || [0, 0])[0]++;
+    pb[p][1] += t.amt });
+  return { r: r, a: a, ex: ex, inc: a.filter(t => t.type === 'income'), sv: a.filter(t => t.goal), cats: Object.entries(by).sort((x, y) => y[1][1] - x[1][1]), pays: Object.entries(pb).sort((x, y) => y[1][1] - x[1][1]), net: r.inc - r.exp - r.sv };
+}
+
+function pdfBuild(k) {
+  const D = pdfDoc(),
+    X0 = 40,
+    X1 = 555.28,
+    W = X1 - X0,
+    LIM = PDF_H - 64,
+    st = pdfStats(k),
+    r = st.r,
+    pk = shift(k, -1),
+    hasPrev = inM(pk).length > 0,
+    ps = hasPrev ? pdfStats(pk) : null,
+    mon = mlabel(k),
+    pmon = new Date(+pk.slice(0, 4), +pk.slice(5) - 1, 1).toLocaleDateString('en-GB', { month: 'long' }),
+    mtd = k === today().slice(0, 7) && +today().slice(8) < dim(k), // B7: running month = month to date
+    period = pdfDay(k + '-01', 1).replace(/^0/, '') + ' – ' + pdfDay(mtd ? today() : k + '-' + pad2(dim(k)), 1).replace(/^0/, '') + (mtd ? ' (month to date)' : ''),
+    sdate = pdfDay(today(), 1).replace(/^0/, '');
+  const head = title => {
+    D.page();
+    D.text(X0, 52, 'LEDGER', { size: 20, bold: 1, color: PDF_NAVY, tc: 2.8 });
+    D.text(X0, 74, title, { size: 13, bold: 1 });
+    const hb = [['Statement period', period], ['Statement date', sdate], ['Profile', PROFILE === 'personal' ? 'Personal' : 'Demo'], ['Currency', 'MYR (RM)']],
+      lx = X1 - Math.max(215, ...hb.map(p => pdfW(pdfEnc(p[1]), 1, 9.5) + 82)); // label column moves left for a long period
+    hb.forEach((p, i) => { D.text(lx, 44 + i * 13, p[0], { size: 9.5, color: PDF_MUT });
+      D.text(X1, 44 + i * 13, p[1], { size: 9.5, bold: 1, align: 'right' }) });
+    D.rect(X0, 92, W, 3, PDF_NAVY);
+    return 104;
+  };
+  const sec = (y, t, x, w) => { x = x == null ? X0 : x;
+    w = w == null ? W : w;
+    D.text(x, y + 10, t.toUpperCase(), { size: 10, bold: 1, color: PDF_NAVY, tc: 0.8 });
+    D.line(x, y + 14, x + w, 1, PDF_NAVY); return y + 18 };
+  // table: cols [{w|null, al}] ; rows [[cells], kind] kind: 'h' header, 't' total, '' body
+  const tbl = (y, cols, rows, x, w) => {
+    x = x == null ? X0 : x;
+    w = w == null ? W : w;
+    const fixed = cols.reduce((s, c) => s + (c.w || 0), 0),
+      flex = cols.filter(c => !c.w).length,
+      fw = (w - 12 - fixed) / (flex || 1),
+      xs = [];
+    let cx = x + 6;
+    cols.forEach(c => { const cw = c.w || fw;
+      xs.push([cx, cw]);
+      cx += cw });
+    rows.forEach(([cells, kind]) => {
+      const h = kind === 'h' ? 14 : 15;
+      if (kind === 'h') D.rect(x, y, w, h, '#EEF0F3');
+      if (kind === 't') { D.rect(x, y, w, h, '#F7F8FA');
+        D.line(x, y, x + w, 1, PDF_INK) }
+      cells.forEach((v, i) => { if (v == null || v === '') return; const [cx0, cw] = xs[i],
+          al = cols[i].al,
+          sz = kind === 'h' ? 8 : 10,
+          b = kind !== '',
+          e = kind === 'h' ? pdfEnc(String(v).toUpperCase()) : pdfFit(v, b, sz, cw - 4);
+        D.text(al === 'r' ? cx0 + cw : cx0, y + (kind === 'h' ? 10 : 11), e, { enc: 1, size: sz, bold: b, color: kind === 'h' ? PDF_MUT : PDF_INK, align: al === 'r' ? 'right' : '', tc: kind === 'h' ? 0.4 : 0 }) });
+      D.line(x, y + h, x + w, 0.5, '#E3E5E9');
+      y += h;
+    });
+    return y;
+  };
+  const cap = (list, max, lab) => { if (list.length <= max) return list; const rest = list.slice(max - 1); return list.slice(0, max - 1).concat([[lab(rest.length), [rest.reduce((s, x) => s + x[1][0], 0), rest.reduce((s, x) => s + x[1][1], 0)]]]) };
+  // ---- page 1
+  let y = head('Monthly statement · ' + mon);
+  y = sec(y + 4, 'Account summary');
+  const sumRows = [[['Description', '', 'Amount (RM)'], 'h'], [['Total income (' + plN(st.inc.length) + ')', '', pdfMoney(r.inc)], ''], [['Total spent (' + plN(st.ex.length) + ')', '', pdfMoney(r.exp, 1)], '']];
+  if (st.sv.length) sumRows.push([['Saved to goals (' + plN(st.sv.length) + ')', '', pdfMoney(r.sv, 1)], '']);
+  sumRows.push([['Net movement for the month', '', pdfMoney(st.net)], 't']);
+  y = tbl(y, [{}, {}, { w: 120, al: 'r' }], sumRows);
+  D.text(X0 + 6, y + 12, 'Savings rate: ' + (r.rate === null ? '-' : r.rate + '%') + ' of income kept', { size: 10, color: PDF_MUT });
+  if (hasPrev) D.text(X1 - 6, y + 12, 'Compared with ' + pmon + ': spent ' + pdfPct(ps.r.exp, r.exp), { size: 10, color: PDF_MUT, align: 'right' });
+  y += 18;
+  y = sec(y + 6, 'Spending by category');
+  const cr = cap(st.cats, 9, n => 'Other categories (' + n + ')');
+  y = tbl(y, [{}, { w: 60, al: 'r' }, { w: 70, al: 'r' }, { w: 100, al: 'r' }], [[['Category', 'Entries', '% of spend', 'Amount (RM)'], 'h']].concat(cr.length ? cr.map(c => [[c[0], c[1][0], (r.exp ? c[1][1] / r.exp * 100 : 0).toFixed(1) + '%', pdfMoney(c[1][1])], '']) : [[['No expenses this month', '', '', ''], '']]).concat([[['Total', st.ex.length, r.exp ? '100.0%' : '0.0%', pdfMoney(r.exp)], 't']]));
+  const hw = (W - 22) / 2,
+    xr = X0 + hw + 22;
+  let yl = sec(y + 6, 'By payment method', X0, hw),
+    yr = sec(y + 6, 'Five largest expenses', xr, hw);
+  const pr = cap(st.pays, 6, n => 'Other methods (' + n + ')');
+  yl = tbl(yl, [{}, { w: 44, al: 'r' }, { w: 78, al: 'r' }], [[['Method', 'Entries', 'Amount (RM)'], 'h']].concat(pr.length ? pr.map(p => [[p[0], p[1][0], pdfMoney(p[1][1])], '']) : [[['No expenses', '', ''], '']]).concat([[['Total', st.ex.length, pdfMoney(r.exp)], 't']]), X0, hw);
+  const big = st.ex.slice().sort((p, q) => q.amt - p.amt).slice(0, 5);
+  yr = tbl(yr, [{}, { w: 84, al: 'r' }], [[['Date · Note', 'Amount (RM)'], 'h']].concat(big.length ? big.map(t => [[pdfDay(t.date) + ' · ' + (t.note || t.cat), pdfMoney(t.amt)], '']) : [[['Nothing yet', ''], '']]), xr, hw);
+  y = Math.max(yl, yr);
+  if (hasPrev) {
+    y = sec(y + 6, 'Comparison with ' + pmon);
+    const rate = v => v === null ? '-' : v + '%',
+      pts = (a, b) => a === null || b === null ? '-' : ((b - a) > 0 ? '+' : (b - a) < 0 ? '-' : '') + Math.abs(b - a).toFixed(1) + ' pts';
+    y = tbl(y, [{}, { w: 80, al: 'r' }, { w: 80, al: 'r' }, { w: 70, al: 'r' }], [[['', pmon, new Date(+k.slice(0, 4), +k.slice(5) - 1, 1).toLocaleDateString('en-GB', { month: 'long' }), 'Change'], 'h'],
+      [['Income (RM)', pdfMoney(ps.r.inc), pdfMoney(r.inc), pdfPct(ps.r.inc, r.inc)], ''],
+      [['Spent (RM)', pdfMoney(ps.r.exp), pdfMoney(r.exp), pdfPct(ps.r.exp, r.exp)], ''],
+      [['Net movement (RM)', pdfMoney(ps.net), pdfMoney(st.net), pdfPct(ps.net, st.net)], ''],
+      [['Savings rate', rate(ps.r.rate), rate(r.rate), pts(ps.r.rate, r.rate)], '']
+    ]);
+  }
+  y = sec(y + 6, 'Goals and bills');
+  const gl = goals.slice(0, goals.length > 3 ? 2 : 3).map(g => [['Goal: ' + g.name, 'RM ' + fmt(g.saved / 100) + ' of RM ' + fmt(g.target / 100) + ' (' + (g.target ? (g.saved / g.target * 100).toFixed(1) : '0.0') + '%)'], '']);
+  if (goals.length > 3) gl.push([['+' + (goals.length - 2) + ' more goals', ''], '']);
+  if (!goals.length) gl.push([['No goals', ''], '']);
+  gl.push([[r.bills[1] ? 'Bills this month' : 'No bills this month', r.bills[1] ? r.bills[0] + ' of ' + r.bills[1] + ' paid' : ''], '']);
+  y = tbl(y, [{}, { w: 220, al: 'r' }], gl);
+  // ---- transactions
+  const tc = [{ w: 52 }, {}, { w: 84 }, { w: 92 }, { w: 76, al: 'r' }],
+    fixed = 52 + 84 + 92 + 76,
+    nw = W - 12 - fixed,
+    cx = [X0 + 6, X0 + 6 + 52, X0 + 6 + 52 + nw, X0 + 6 + 52 + nw + 84, X0 + 6 + 52 + nw + 84 + 92 + 76],
+    cw = [52, nw, 84, 92, 76];
+  const thead = yy => tbl(yy, tc, [[['Date', 'Note', 'Category', 'Paid by', 'Amount (RM)'], 'h']]);
+  const rowsT = st.a.slice().sort((p, q) => p.date.localeCompare(q.date) || p.id - q.id);
+  y = thead(head('Transactions · ' + mon));
+  rowsT.forEach(t => {
+    const L = [pdfWrap(t.note || '', 0, 10, cw[1] - 4), pdfWrap(t.cat, 0, 10, cw[2] - 4), pdfWrap(t.type === 'expense' ? (t.pay || '') : '', 0, 10, cw[3] - 4)],
+      nl = Math.max(L[0].length, L[1].length, L[2].length),
+      h = 17 + (nl - 1) * 11;
+    if (y + h > LIM) y = thead(head('Transactions · ' + mon));
+    D.text(cx[0], y + 12, pdfDay(t.date), { size: 10 });
+    L.forEach((ls, i) => ls.forEach((e, j) => D.text(cx[i + 1], y + 12 + j * 11, e, { enc: 1, size: 10 })));
+    D.text(cx[4], y + 12, t.type === 'expense' ? pdfMoney(t.amt, 1) : pdfMoney(t.amt), { size: 10, align: 'right' });
+    D.line(X0, y + h, X1, 0.5, '#E3E5E9');
+    y += h;
+  });
+  if (y + 34 > LIM) y = thead(head('Transactions · ' + mon));
+  D.rect(X0, y, W, 17, '#F7F8FA');
+  D.line(X0, y, X1, 1, PDF_INK);
+  D.text(cx[1], y + 12, 'Total · ' + plN(st.a.length), { size: 10, bold: 1 });
+  const allExp = st.a.filter(t => t.type === 'expense').reduce((s0, t) => s0 + t.amt, 0);
+  D.text(cx[4], y + 12, 'Income ' + pdfMoney(r.inc) + '     Spent ' + pdfMoney(allExp, 1), { size: 10, bold: 1, align: 'right' });
+  D.line(X0, y + 17, X1, 0.5, '#E3E5E9');
+  D.text(X0, y + 30, 'Amounts in brackets are expenses' + (st.sv.length ? ', including ' + plN(st.sv.length) + ' saved to goals' : '') + '.', { size: 8.5, color: PDF_MUT });
+  // ---- footers
+  const N = D.pages.length;
+  D.pages.forEach((p, i) => { D.on(i);
+    D.line(X0, PDF_H - 34, X1, 0.5, '#C9CDD3');
+    D.text(X0, PDF_H - 24, 'Generated by Ledger from entries recorded on this device. This is a personal summary, not an official bank statement.', { size: 7.5, color: PDF_MUT });
+    D.text(X1, PDF_H - 24, 'Page ' + (i + 1) + ' of ' + N, { size: 8, color: PDF_MUT, align: 'right' }) });
+  return { pdf: D.build('Ledger ' + mon), pages: N };
+}
+
+function plN(n) { return n + (n === 1 ? ' entry' : ' entries') }
+
+function pdfSave(data, name) {
+  const u8 = new Uint8Array(data.length);
+  for (let i = 0; i < data.length; i++) u8[i] = data.charCodeAt(i) & 255;
+  const blob = new Blob([u8], { type: 'application/pdf' }),
+    ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  let file = null;
+  try { file = new File([blob], name, { type: 'application/pdf' }) } catch (e) {}
+  if (ios && file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: name }).catch(() => {}); return }
+  const url = URL.createObjectURL(blob),
+    el = document.createElement('a');
+  el.href = url;
+  el.download = name;
+  document.body.appendChild(el);
+  el.click();
+  el.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+function pdfGo(k) {
+  if (!inM(k).length) { toast('No entries in ' + mlabel(k)); return }
+  let out;
+  try { out = pdfBuild(k) } catch (e) { toast('Could not make the PDF'); return }
+  const name = 'Ledger-' + k + '.pdf';
+  pdfSave(out.pdf, name);
+  const f = pdfFlag();
+  (f.done = f.done || {})[k] = 1;
+  pdfFlagSet(f);
+  if (view === 'stats') render(true);
+  toast('PDF saved: ' + name);
+}
+
+/* End-of-month nudge: Stats > Monthly review only. From 2 days before month end through the 5th. */
+function pdfFlag() { try { const v = JSON.parse(localStorage.getItem(K('pdfnudge')) || '{}'); return v && typeof v === 'object' ? v : {} } catch (e) { return {} } }
+
+function pdfFlagSet(f) { try { localStorage.setItem(K('pdfnudge'), JSON.stringify(f)) } catch (e) {} }
+
+function pdfNudgeMonth() { const t = today(),
+    k = t.slice(0, 7),
+    d = +t.slice(8),
+    n = dim(k); if (d >= n - 2) return { m: k, left: n - d }; if (d <= 5) return { m: shift(k, -1), left: -1 }; return null }
+
+function pdfNudge() {
+  if (PROFILE !== 'personal') return '';
+  const nm = pdfNudgeMonth();
+  if (!nm || !inM(nm.m).length) return '';
+  const f = pdfFlag();
+  if ((f.done && f.done[nm.m]) || f.later === today()) return '';
+  const mn = new Date(+nm.m.slice(0, 4), +nm.m.slice(5) - 1, 1).toLocaleDateString('en-GB', { month: 'long' }),
+    when = nm.left < 0 ? 'Month ended.' : nm.left === 0 ? 'Month ends today.' : 'Month ends in ' + nm.left + (nm.left === 1 ? ' day.' : ' days.');
+  return '<section class="nudgecard" aria-labelledby="pdfnt"><h2 id="pdfnt">' + mn + ' report is ready</h2><p class="lbl">' + when + ' Save it as a PDF.</p><div class="wnbtns"><button class="pri" data-a="pdfnow">Download PDF</button><button class="sec" data-a="pdflater">Later</button></div></section>';
+}
 
 /* Cash-paid expenses (#42). K('cashded') = {entryId: cents taken from Cash}, per device.
  * Only entries recorded here ever move Cash; old entries and synced-in changes never do.
@@ -4293,7 +4621,10 @@ document.addEventListener('click', e => {
       save();
       render();
       cashFlashEnd() });
-  } else if (a === 'wnok') { wnDone();
+  } else if (a === 'pdf') { pdfGo(/^\d{4}-\d{2}$/.test(v) ? v : ym) } else if (a === 'pdfnow') { const nm = pdfNudgeMonth(); if (nm) pdfGo(nm.m) } else if (a === 'pdflater') { const f = pdfFlag();
+    f.later = today();
+    pdfFlagSet(f);
+    render(true) } else if (a === 'wnok') { wnDone();
     const c = document.getElementById('wncard'); if (c) c.remove();
     wnFit() } else if (a === 'wngo') { wnDone(); if (v === 'appearance') { styleSeen();
       view = 'stats';
@@ -5270,10 +5601,10 @@ function payChips() {
 let statsTab = 'overview',
   revShow = false;
 const DEMO_VER = 9;
-const APP_VER = 'v25';
+const APP_VER = 'v26';
 /* What's new card (#44): rewritten every release from its user-visible items. lines [] = no card.
  * act.go is limited to WN_GO. Shown once per version (K('wnseen')), personal profile with history only. */
-const WHATS_NEW = { ver: 'v25', lines: ['Cash-paid expenses now come off your Cash', 'Pick from 4 visual styles in Settings'], act: { label: 'Try styles', go: 'appearance' } };
+const WHATS_NEW = { ver: 'v26', lines: ['Save a monthly PDF report from Stats'], act: null };
 const WN_GO = ['appearance', 'bankcash'];
 let wnShown = false;
 function wnNum(v) { return parseInt(String(v || '').replace(/^v/, ''), 10) || 0 }
@@ -5373,7 +5704,7 @@ function reviewView() {
 
 function stats() {
   return '<div class="sth"><h1 class="ttl">Stats</h1><button class="setbtn" data-a="nav" data-v="settings"' + (styleNew() ? ' aria-label="Settings, new style options"' : '') + '><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Settings' + (styleNew() ? '<span class="newdot" aria-hidden="true"></span>' : '') + '</button></div>' +
-    monthBar() + '<div class="utab"><button data-a="stab" data-v="overview" aria-pressed="' + (statsTab === 'overview') + '">Overview</button><button data-a="stab" data-v="review" aria-pressed="' + (statsTab === 'review') + '">Monthly review</button></div>' + (statsTab === 'review' ? reviewView() : statsOverview());
+    monthBar() + '<div class="utab"><button data-a="stab" data-v="overview" aria-pressed="' + (statsTab === 'overview') + '">Overview</button><button data-a="stab" data-v="review" aria-pressed="' + (statsTab === 'review') + '">Monthly review</button></div>' + (statsTab === 'review' ? pdfNudge() + reviewView() : statsOverview());
 }
 
 /* ===== DROPDOWN SECTIONS & SETTINGS ===== */
