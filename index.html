@@ -3182,6 +3182,221 @@ select.mpill {
 [data-style="bold"] .amtblk {
   margin-bottom: 6px
 }
+/* ===== v25: toast wrap, Cash-paid (#42), style picker (#43), what's new (#44) ===== */
+#toast {
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box
+}
+#toast span {
+  white-space: normal
+}
+.cashbox {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  background: var(--tint);
+  border: 1px solid var(--acc);
+  color: var(--ink)
+}
+.cashbox > b {
+  font-size: 15px
+}
+.cashbox .lbl {
+  font-size: 13px;
+  color: var(--ink)
+}
+.cashbox .bad, .bcb .bad {
+  color: var(--bad)
+}
+.cashbox .bad, .bcb.bcfl .bad {
+  color: color-mix(in srgb, var(--bad) 60%, var(--ink))
+}
+.bcb.bcfl {
+  box-shadow: inset 0 0 0 2px var(--acc);
+  background: var(--tint);
+  color: var(--ink)
+}
+.bcchg {
+  margin: 6px 0 0;
+  font-size: 12px
+}
+.setbtn {
+  position: relative
+}
+.newdot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--acc);
+  border: 2px solid var(--bg)
+}
+.newtag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  background: var(--acc);
+  color: var(--on);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 1.5;
+  vertical-align: middle
+}
+.stygrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px
+}
+.stycard {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--card);
+  color: var(--ink);
+  text-align: left
+}
+.stycard[aria-pressed="true"] {
+  border: 2px solid var(--acc);
+  padding: 9px
+}
+.styck {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--acc);
+  color: var(--on);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700
+}
+.stypv {
+  display: block;
+  height: 92px;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid var(--pv-line);
+  border-radius: var(--r-sm);
+  background: var(--pv-bg);
+  color: var(--pv-ink);
+  font-family: var(--pv-ff);
+  overflow: hidden
+}
+.pvl {
+  display: block;
+  font-size: 11px;
+  color: var(--pv-mut)
+}
+.pvb {
+  display: block;
+  font-size: 16px;
+  font-weight: 700
+}
+.pvr {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px
+}
+.pva, .pvc, .pvbar {
+  display: block;
+  height: 14px;
+  border-radius: var(--r-sm)
+}
+.pva {
+  flex: 1;
+  background: var(--pv-acc)
+}
+.pvc {
+  flex: 1;
+  background: var(--pv-card);
+  border: 1px solid var(--pv-line);
+  box-sizing: border-box
+}
+.pvbar {
+  margin-top: 6px;
+  height: 16px;
+  background: var(--pv-acc)
+}
+.styn {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600
+}
+.wncard {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(77px + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  max-width: 456px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow)
+}
+.wnhd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between
+}
+.wncard h2 {
+  margin: 0;
+  font-size: 16px
+}
+.wnx {
+  min-width: 44px;
+  min-height: 44px;
+  margin: -10px -10px -10px 0;
+  border: 0;
+  background: none;
+  color: var(--mut);
+  font-size: 22px
+}
+.wncard ul {
+  margin: 2px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.5
+}
+.wnbtns {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px
+}
+.wnbtns button {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px;
+  font-weight: 600
+}
+body.wnup main {
+  padding-bottom: calc(120px + var(--wnh, 0px))
+}
+body.wnup #toast {
+  bottom: calc(85px + var(--wnh, 0px) + env(safe-area-inset-bottom, 0px))
+}
 </style>
 </head>
 <body>
@@ -3334,10 +3549,10 @@ let theme = 'auto',
   catView = 'pie',
   STYLE = 'classic';
 const STYLES = [
-  ['classic', 'Classic', '#FFFFFF', '#2F5FD0'],
-  ['soft', 'Soft calm', '#F2F3F7', '#26335C'],
-  ['bank', 'Bank-grade', '#FFFFFF', '#0F766E'],
-  ['bold', 'Bold blocks', '#EBCB8B', '#26221C']
+  ['classic', 'Classic'],
+  ['soft', 'Soft calm'],
+  ['bank', 'Bank-grade'],
+  ['bold', 'Bold blocks']
 ];
 
 function loadStyle() { let v = 'classic'; try { v = localStorage.getItem(K('style')) || 'classic' } catch (e) {} STYLE = STYLES.some(x => x[0] === v) ? v : 'classic';
@@ -3407,6 +3622,8 @@ function home() {
     const list = homeList();
     h += filterUI(list) + '<div id="txlist">' + txList(list) + '</div>';
   }
+  if (wnActive()) { wnShown = true;
+    h += wnCard() }
   return h;
 }
 
@@ -3487,13 +3704,21 @@ function detRow() {
   return '<button class="detrow" id="detrow" data-a="detopen" aria-haspopup="dialog"><span class="deticon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></span><span class="dettxt"><b>' + esc(empty ? 'Add details' : parts.join(' · ')) + '</b><span class="lbl">Tap to add note, date, paid by or goal</span></span><span class="detedit">Edit</span></button>';
 }
 
+function cashBox() { // #42: what saving will do to Cash (expense + Paid by Cash only)
+  if (draft.type !== 'expense' || draft.pay !== 'Cash') return '';
+  const c0 = bcGet().cash,
+    old = draft.edit ? (() => { const m = cdGet(), k = String(draft.edit); return Object.prototype.hasOwnProperty.call(m, k) ? Math.round(+m[k]) || 0 : 0 })() : 0,
+    c1 = c0 - (amtC() - old);
+  return '<div class="cashbox" id="cashbox"><b>Taken from your Cash</b><span class="lbl">' + bcMoney(c0) + ' now → <b class="' + (c1 < 0 ? 'bad' : '') + '">' + bcMoney(c1) + '</b> after saving. Your Bank is not touched.</span></div>';
+}
+
 function detSheet() {
   const ex = draft.type === 'expense';
   return '<div class="shwrap" id="detsheet"><div class="shbg" data-a="detclose"></div><div class="sheet detsh" role="dialog" aria-modal="true" aria-labelledby="detttl"><div class="dethd"><i class="grab" aria-hidden="true"></i><div class="shhead"><h2 id="detttl" tabindex="-1" style="margin:0">Details</h2><button class="lnk shdone" data-a="detclose">Done</button></div></div>' +
     '<div class="detbody" id="detbody">' +
     '<div class="dlab"><label for="note">Note</label><span class="lbl" id="notehelp">optional, but it helps you remember</span></div><input id="note" class="notein" type="text" aria-describedby="notehelp" placeholder="What was this for?" value="' + esc(draft.note) + '"><div class="chips" id="sugg"></div>' +
     '<div><p class="lbl" style="margin:0 0 4px">Date</p><button class="daterow datebtn" data-a="calopen" aria-haspopup="dialog" aria-label="Date, ' + esc(longDate(draft.date)) + '. Change date"><span class="lbl">Date</span><b>' + esc(longDate(draft.date)) + '</b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>' +
-    (ex ? '<div>' + payChips() + '</div>' + (goals.length ? '<div>' + goalChips() + '</div>' : '') : '') +
+    (ex ? '<div>' + payChips() + cashBox() + '</div>' + (goals.length ? '<div>' + goalChips() + '</div>' : '') : '') +
     '</div></div></div>';
 }
 
@@ -3591,8 +3816,49 @@ function bcPrev() { const c = bcGet().cash,
     L = bcLeft(),
     a = bcParse(bcAmt); let cash = c; if (a) cash = bcMode === 'wd' ? c + a : c - a; return { cash: cash, bank: L - cash, left: L, saved: c } }
 
+/* Cash-paid expenses (#42). K('cashded') = {entryId: cents taken from Cash}, per device.
+ * Only entries recorded here ever move Cash; old entries and synced-in changes never do.
+ * cashFix(t, track) sets the entry's deduction to what it should be now and moves Cash by the difference. */
+let cashFlash = null; // {from, to, until} for the Home Cash cell highlight
+function cdGet() { try { const v = JSON.parse(localStorage.getItem(K('cashded')) || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {} } catch (e) { return {} } }
+
+function cdSet(m) { try { localStorage.setItem(K('cashded'), JSON.stringify(m)) } catch (e) {} }
+
+function cdHas(id) { return Object.prototype.hasOwnProperty.call(cdGet(), String(id)) }
+
+function cashWant(t) { return t && !t.del && t.type === 'expense' && t.pay === 'Cash' ? Math.round(+t.amt) || 0 : 0 }
+
+function cashFix(t, track) {
+  const m = cdGet(),
+    k = String(t.id),
+    had = Object.prototype.hasOwnProperty.call(m, k);
+  if (!had && !track) return 0;
+  const old = had ? Math.round(+m[k]) || 0 : 0,
+    want = cashWant(t);
+  if (want) m[k] = want;
+  else delete m[k];
+  cdSet(m);
+  if (old === want) return 0;
+  const c0 = bcGet().cash,
+    c1 = c0 - (want - old);
+  bcSet({ cash: c1 });
+  cashFlash = { from: c0, to: c1, until: Date.now() + 3000 };
+  return c1 - c0;
+}
+
+function cashMsg(d, c1) { if (!d) return ''; return ' RM ' + fmt(Math.abs(d) / 100) + (d < 0 ? ' taken from Cash.' : ' returned to Cash.') + (d < 0 && c1 < 0 && c1 - d >= 0 ? ' Cash is now negative.' : '') }
+
+function cashToast(base, d, undo) { toast(d ? base + '.' + cashMsg(d, bcGet().cash) : base, undo) }
+
+function cashMonth() { const m = cdGet(); let n = 0, a = 0; inM(ym).forEach(t => { const k = String(t.id); if (t.type === 'expense' && Object.prototype.hasOwnProperty.call(m, k)) { n++; a += Math.round(+m[k]) || 0 } }); return { n: n, amt: a } }
+
+function cashFlashOn() { return !!(cashFlash && cashFlash.until > Date.now()) }
+
+function cashFlashEnd() { if (!cashFlash) return; const w = Math.max(0, cashFlash.until - Date.now()); setTimeout(() => { if (cashFlash && cashFlash.until <= Date.now() + 50) { cashFlash = null; document.querySelectorAll('.bcfl').forEach(e => e.classList.remove('bcfl')); const l = document.getElementById('bcchg'); if (l) l.remove() } }, w) }
+
 function bcRow() { if (!bcOn()) return ''; const c = bcGet().cash,
-    b = bcLeft() - c; return '<div class="bcrow"><button class="bcb" data-a="bcopen"><span class="lbl">Bank</span> <span class="' + (b < 0 ? 'bad' : '') + '">' + bcMoney(b) + '</span></button><button class="bcb" data-a="bcopen"><span class="lbl">Cash</span> ' + bcMoney(c) + '</button><button class="bcb bcx" data-a="bcopen" aria-label="Move money between bank and cash">⇄</button></div>' }
+    b = bcLeft() - c,
+    fl = cashFlashOn(); return '<div class="bcrow"><button class="bcb" data-a="bcopen"><span class="lbl">Bank</span> <span class="' + (b < 0 ? 'bad' : '') + '">' + bcMoney(b) + '</span></button><button class="bcb' + (fl ? ' bcfl' : '') + '" data-a="bcopen"><span class="lbl">Cash</span> <span class="' + (c < 0 ? 'bad' : '') + '">' + bcMoney(c) + '</span></button><button class="bcb bcx" data-a="bcopen" aria-label="Move money between bank and cash">⇄</button></div>' + (fl ? '<p class="lbl bcchg" id="bcchg" role="status">Cash changed: ' + bcMoney(cashFlash.from) + ' → ' + bcMoney(cashFlash.to) + '</p>' : '') }
 
 function bcSheet() {
   if (!bcOpen) return '';
@@ -3600,9 +3866,10 @@ function bcSheet() {
     f = n => (n / 100).toFixed(2);
   return '<div class="shwrap"><div class="shbg" data-a="bcclose"></div><div class="sheet" role="dialog" aria-label="Bank and cash"><h2 style="margin:0">Bank and cash</h2>' +
     '<div class="two2"><label class="lbl">Bank (auto)<input id="bcbank" type="text" readonly tabindex="-1" aria-readonly="true" value="' + f(v.bank) + '"' + (v.bank < 0 ? ' style="color:var(--bad)"' : '') + '></label><label class="lbl">Cash (RM)<input id="bccash" type="number" inputmode="decimal" min="0" step="any" placeholder="0.00" value="' + f(v.cash) + '"></label></div>' +
+    (() => { const cm = cashMonth(); return '<div class="cashbox"><b>Paid by Cash ' + (ym === curKey ? 'this month' : 'in ' + mlabel(ym)) + '</b><span class="lbl">' + (cm.n ? cm.n + ' expense' + (cm.n === 1 ? '' : 's') + ' · −RM ' + fmt(cm.amt / 100) + ' taken from Cash automatically' : 'None yet. Expenses paid by Cash come off Cash automatically.') + '</span></div>' })() +
     '<div class="seg bcseg"><button data-a="bcmode" data-v="wd" aria-pressed="' + (bcMode === 'wd') + '">Withdraw</button><button data-a="bcmode" data-v="dep" aria-pressed="' + (bcMode === 'dep') + '">Deposit</button></div>' +
     '<div class="bact"><input id="bcw" type="number" inputmode="decimal" min="0" step="any" placeholder="Amount (RM)" aria-label="' + (bcMode === 'wd' ? 'Amount to withdraw from bank to cash' : 'Amount to deposit from cash to bank') + '" value="' + esc(bcAmt) + '"><button class="sec" data-a="bcgo">' + (bcMode === 'wd' ? 'Withdraw' : 'Deposit') + '</button></div>' +
-    '<p class="lbl" style="margin:0">Reminder only. Does not change Left this month or add an entry.</p>' +
+    '<p class="lbl" style="margin:0">Moving money does not change Left this month or add an entry. Expenses paid by Cash come off Cash by themselves; Bank is not touched.</p>' +
     '<button class="bccancel" data-a="bcdone" style="' + (thm() === 'light' ? 'background:#C5443B;color:#FFFFFF' : 'background:#F28B82;color:#121316') + '">Cancel</button></div></div>';
 }
 
@@ -3631,10 +3898,13 @@ function themeUI() {
 }
 
 /* ===== RENDER ===== */
-const csv = () => 'date,type,category,amount,note,payment\n' + live().sort((a, b) => a.date.localeCompare(b.date)).map(t => [t.date, t.type, t.cat, (t.amt / 100).toFixed(2), '"' + t.note.replace(/"/g, '""') + '"', t.pay || ''].join(',')).join('\n');
+const csvQ = x => '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"'; // B6: quote text fields, double inner quotes
+const csv = () => 'date,type,category,amount,note,payment\n' + live().sort((a, b) => a.date.localeCompare(b.date)).map(t => [t.date, t.type, csvQ(t.cat), (t.amt / 100).toFixed(2), csvQ(t.note), csvQ(t.pay || '')].join(',')).join('\n');
 
 function render(keep) {
   if (!/^\d{4}-\d{2}$/.test(ym)) ym = curKey;
+  seenInit();
+  if (wnShown && view !== 'home') wnDone(); // leaving Home counts as seen
   if (view !== lastView && !popping) { try { history.pushState({ v: view }, '') } catch (e) {} }
   if (view !== lastView && accTab(view) !== accTab(lastView)) closeAcc();
   if (view !== 'sync') closeOverlays();
@@ -3647,6 +3917,7 @@ function render(keep) {
     nd = dueList().length;
   document.querySelectorAll('nav button').forEach(b => { b.setAttribute('aria-current', String(b.dataset.v === vv)); if (b.dataset.v === 'bills') b.querySelector('.nl').textContent = 'Bills' + (nd ? ' (' + nd + ')' : '') });
   if (!keep) window.scrollTo(0, 0);
+  wnFit();
   const dbN = document.getElementById('detbody');
   if (dbN) { suggest(draft.note || '');
     dbN.scrollTop = dbT;
@@ -3985,9 +4256,13 @@ document.addEventListener('click', e => {
     if (gl) { ensureSavingsCat();
       draft.cat = 'Savings' }
     const rec = { type: draft.type, cat: draft.cat, note: draft.note.trim() || (gl ? 'Saved to ' + goals.find(x => x.id === gl).name : ''), amt: amt, date: draft.date || today(), upd: Date.now(), pay: draft.type === 'expense' ? (draft.pay || '') : '', goal: gl };
+    let cd = 0;
     if (draft.edit) { const g = tx.find(t => t.id === draft.edit); if (g) { const old = g.amt,
-          og = g.goal || 0;
-        Object.assign(g, rec); if (rec.amt !== old) syncAmt(g, old); if (og !== gl || rec.amt !== old) { if (og) goalAdd(og, -old); if (gl) goalAdd(gl, rec.amt) } } } else { tx.push(Object.assign({ id: Date.now() * 1000 + Math.floor(Math.random() * 1000) }, rec)); if (gl) goalAdd(gl, rec.amt) }
+          og = g.goal || 0,
+          ctrack = !cdHas(g.id) && g.pay !== 'Cash'; // old entry switched to Cash now counts; old Cash entries never do
+        Object.assign(g, rec); if (rec.amt !== old) syncAmt(g, old); if (og !== gl || rec.amt !== old) { if (og) goalAdd(og, -old); if (gl) goalAdd(gl, rec.amt) } cd = cashFix(g, ctrack) } } else { const ng = Object.assign({ id: Date.now() * 1000 + Math.floor(Math.random() * 1000) }, rec);
+      tx.push(ng); if (gl) goalAdd(gl, rec.amt);
+      cd = cashFix(ng, true) }
     if (draft.rep && !draft.edit) { recur.push({ rid: 100000 + Math.floor(Math.random() * 899999), type: rec.type, cat: rec.cat, note: rec.note, amt: rec.amt, day: +rec.date.slice(8), last: rec.date.slice(0, 7), goal: rec.goal });
       saveR() }
     save();
@@ -3998,21 +4273,39 @@ document.addEventListener('click', e => {
     payPrompt = (isNewInc && !payGet(pm) && !payNot().includes(pm) && inM(pm).filter(t => t.type === 'income').length === 1) ? { m: pm, amt: rec.amt, cat: rec.cat } : null;
     view = 'home';
     render();
-    toast('Entry saved');
+    cashFlashEnd();
+    cashToast('Entry saved', cd);
   } else if (a === 'del') {
     const g = tx.find(t => String(t.id) === b.dataset.id);
     if (!g) return;
-    const ops = unlink(g);
+    const ops = unlink(g),
+      ctook = cdHas(g.id);
     g.del = 1;
     g.upd = Date.now();
+    const cd = cashFix(g, false);
     save();
     render();
-    toast('Entry deleted', () => { g.del = 0;
+    cashFlashEnd();
+    cashToast('Entry deleted', cd, () => { g.del = 0;
       g.upd = Date.now();
       relink(g, ops);
+      if (ctook) cashFix(g, true);
       save();
-      render() });
-  } else if (a === 'undo') { const t = $('#toast'); if (t._undo) t._undo();
+      render();
+      cashFlashEnd() });
+  } else if (a === 'wnok') { wnDone();
+    const c = document.getElementById('wncard'); if (c) c.remove();
+    wnFit() } else if (a === 'wngo') { wnDone(); if (v === 'appearance') { styleSeen();
+      view = 'stats';
+      render(); // Settings sits under Stats, so back from Settings returns to Stats
+      view = 'settings';
+      render();
+      setOpen.appear = true;
+      render(true); const sb = document.querySelector('[data-a="sxtog"][data-v="set.appear"]'); if (sb) { sb.focus();
+        try { sb.scrollIntoView({ block: 'start' }) } catch (x) {} } } else if (v === 'bankcash') { bcOpen = true;
+      bcMode = 'wd';
+      bcAmt = '';
+      render(true) } } else if (a === 'undo') { const t = $('#toast'); if (t._undo) t._undo();
     t.hidden = true } else if (a === 'cv') { catView = v; try { localStorage.setItem('fin.cv2', v) } catch (err) {} render(true) } else if (a === 'bcopen') { bcOpen = true;
     bcMode = 'wd';
     bcAmt = '';
@@ -4126,6 +4419,7 @@ document.addEventListener('click', e => {
     render(true) } else if (a === 'fcatmore') { fCatMore = !fCatMore;
     render(true) } else if (a === 'paym') { draft.pay = draft.pay === v ? '' : v;
     render(true) } else if (a === 'profile') { setProfile(v) } else if (a === 'resetdemo') { if (PROFILE === 'personal') return;
+    try { localStorage.removeItem(K('cashded')) } catch (e) {}
     tx = [];
     bills = [];
     budgets = {};
@@ -4235,6 +4529,7 @@ document.addEventListener('click', e => {
     applyCats(d.cats || null);
     Object.keys(budgets).forEach(k => { if (typeof budgets[k] === 'number') budgets[k] = { rm: budgets[k] } });
     if (d.bankcash && typeof d.bankcash === 'object') bcSet(d.bankcash);
+    cdSet(d.cashded && typeof d.cashded === 'object' && !Array.isArray(d.cashded) ? d.cashded : {}); // old backups have none
     if (Array.isArray(d.paymethods)) paySet(d.paymethods.filter(x => typeof x === 'string').map(x => x.trim()).filter(Boolean).slice(0, PM_MAX));
     tx.forEach(t => { t.upd = now });
     pend = null;
@@ -4265,11 +4560,14 @@ document.addEventListener('click', e => {
     const g = { id: Date.now() * 1000 + Math.floor(Math.random() * 1000), upd: Date.now(), type: f.type, cat: f.cat, note: f.note, amt: f.amt, pay: f.pay || '', date: today(), goal: (f.goal && goals.some(x => x.id === f.goal)) ? f.goal : 0 };
     tx.push(g);
     if (g.goal) goalAdd(g.goal, g.amt);
+    const cd = cashFix(g, true);
     ym = curKey;
     save();
-    toast('Added ' + f.note, () => { unlink(g);
+    if (cd) render(true);
+    cashToast('Added ' + f.note, cd, () => { unlink(g);
       g.del = 1;
       g.upd = Date.now();
+      cashFix(g, false);
       save();
       render(true) });
   } else if (a === 'goalpick') {
@@ -4333,18 +4631,23 @@ document.addEventListener('click', e => {
   } else if (a === 'deledit') {
     const g = tx.find(t => t.id === draft.edit);
     if (!g) return;
-    const ops = unlink(g);
+    const ops = unlink(g),
+      ctook = cdHas(g.id);
     g.del = 1;
     g.upd = Date.now();
+    const cd = cashFix(g, false);
     save();
     draft = { type: 'expense', amt: '', cat: 'Food', note: '', date: today() };
     view = 'home';
     render();
-    toast('Entry deleted', () => { g.del = 0;
+    cashFlashEnd();
+    cashToast('Entry deleted', cd, () => { g.del = 0;
       g.upd = Date.now();
       relink(g, ops);
+      if (ctook) cashFix(g, true);
       save();
-      render() });
+      render();
+      cashFlashEnd() });
   } else if (a === 'canceledit') { draft = { type: 'expense', amt: '', cat: 'Food', note: '', date: today() };
     view = 'home';
     render();
@@ -4967,7 +5270,24 @@ function payChips() {
 let statsTab = 'overview',
   revShow = false;
 const DEMO_VER = 9;
-const APP_VER = 'v24'; // keep in step with sw.js cache ledger-vN
+const APP_VER = 'v25';
+/* What's new card (#44): rewritten every release from its user-visible items. lines [] = no card.
+ * act.go is limited to WN_GO. Shown once per version (K('wnseen')), personal profile with history only. */
+const WHATS_NEW = { ver: 'v25', lines: ['Cash-paid expenses now come off your Cash', 'Pick from 4 visual styles in Settings'], act: { label: 'Try styles', go: 'appearance' } };
+const WN_GO = ['appearance', 'bankcash'];
+let wnShown = false;
+function wnNum(v) { return parseInt(String(v || '').replace(/^v/, ''), 10) || 0 }
+
+function wnActive() { if (PROFILE !== 'personal' || !WHATS_NEW.lines.length) return false; let v = ''; try { v = localStorage.getItem(K('wnseen')) } catch (e) { return false } return v !== null && wnNum(v) < wnNum(WHATS_NEW.ver) && hasHistory() }
+
+function wnDone() { wnShown = false; try { localStorage.setItem(K('wnseen'), WHATS_NEW.ver) } catch (e) {} document.body.classList.remove('wnup') }
+
+function wnCard() {
+  const a = WHATS_NEW.act && WN_GO.includes(WHATS_NEW.act.go) ? WHATS_NEW.act : null;
+  return '<section class="wncard" id="wncard" aria-labelledby="wnttl"><div class="wnhd"><h2 id="wnttl">Updated to ' + esc(WHATS_NEW.ver) + '<span class="newtag">NEW</span></h2><button class="wnx" data-a="wnok" aria-label="Close">×</button></div><ul>' + WHATS_NEW.lines.slice(0, 3).map(l => '<li>' + esc(l) + '</li>').join('') + '</ul><div class="wnbtns"><button class="pri" data-a="wnok">Got it</button>' + (a ? '<button class="sec" data-a="wngo" data-v="' + a.go + '">' + esc(a.label) + '</button>' : '') + '</div></section>';
+}
+
+function wnFit() { const c = document.getElementById('wncard'); document.body.classList.toggle('wnup', !!c); if (c) document.body.style.setProperty('--wnh', c.offsetHeight + 'px') } // keep in step with sw.js cache ledger-vN
 function ensureDemo() {
   if (PROFILE === 'personal') return;
   let v = '';
@@ -5052,7 +5372,7 @@ function reviewView() {
 }
 
 function stats() {
-  return '<div class="sth"><h1 class="ttl">Stats</h1><button class="setbtn" data-a="nav" data-v="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Settings</button></div>' +
+  return '<div class="sth"><h1 class="ttl">Stats</h1><button class="setbtn" data-a="nav" data-v="settings"' + (styleNew() ? ' aria-label="Settings, new style options"' : '') + '><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Settings' + (styleNew() ? '<span class="newdot" aria-hidden="true"></span>' : '') + '</button></div>' +
     monthBar() + '<div class="utab"><button data-a="stab" data-v="overview" aria-pressed="' + (statsTab === 'overview') + '">Overview</button><button data-a="stab" data-v="review" aria-pressed="' + (statsTab === 'review') + '">Monthly review</button></div>' + (statsTab === 'review' ? reviewView() : statsOverview());
 }
 
@@ -5063,14 +5383,50 @@ function sxSec(grp, id, title, body, sum) { const o = grp === 'st' ? !!stOpen[id
 
 function noH2(h) { return h.replace(/^<h2>[^<]*<\/h2>/, '') }
 
+/* Style picker (#43). Preview colours are read from the live style rules (temporarily switching data-style
+ * inside one task, so nothing paints) — no second copy of any colour. Cached per theme. */
+const PV_VARS = ['--bg', '--card', '--ink', '--mut', '--acc', '--line', '--ff'];
+let pvCache = {};
+function pvTokens(st) {
+  const root = document.documentElement,
+    th = root.getAttribute('data-theme') || '',
+    key = st + '|' + th;
+  if (pvCache[key]) return pvCache[key];
+  const cur = root.getAttribute('data-style'),
+    o = {};
+  root.setAttribute('data-style', st);
+  const cs = getComputedStyle(root);
+  PV_VARS.forEach(v => { o[v] = cs.getPropertyValue(v).trim() });
+  root.setAttribute('data-style', cur);
+  return pvCache[key] = o;
+}
+
+function styleCards() {
+  return '<div class="stygrid">' + STYLES.map(t => { const k = pvTokens(t[0]),
+      on = STYLE === t[0],
+      vs = PV_VARS.map(v => v.replace('--', '--pv-') + ':' + k[v]).join(';');
+    return '<button class="stycard" data-a="style" data-v="' + t[0] + '" aria-pressed="' + on + '">' + (on ? '<span class="styck" aria-hidden="true">✓</span>' : '') + '<span class="stypv" aria-hidden="true" style="' + esc(vs) + '"><span class="pvl">Left this month</span><span class="pvb">RM 1,240</span><span class="pvr"><i class="pva"></i><i class="pvc"></i></span><i class="pvbar"></i></span><span class="styn">' + t[1] + '</span></button>' }).join('') + '</div>';
+}
+
+/* NEW markers (#43): K('styleseen') '0' = show, '1' = seen. Set once per profile; fresh profiles start seen. */
+function hasHistory() { try { return !!(tx.length || bills.length || goals.length || recur.length || plans.length || favs.length || localStorage.getItem(K('style')) !== null || localStorage.getItem(K('theme')) !== null) } catch (e) { return !!tx.length } }
+
+function seenInit() { try { if (localStorage.getItem(K('styleseen')) === null) localStorage.setItem(K('styleseen'), hasHistory() ? '0' : '1');
+    if (localStorage.getItem(K('wnseen')) === null) localStorage.setItem(K('wnseen'), hasHistory() && PROFILE === 'personal' ? 'v0' : WHATS_NEW.ver) } catch (e) {} }
+
+function styleNew() { try { return localStorage.getItem(K('styleseen')) === '0' } catch (e) { return false } }
+
+function styleSeen() { try { localStorage.setItem(K('styleseen'), '1') } catch (e) {} }
+
 function settingsView() {
-  const app = '<p class="lbl sxlbl">Theme</p>' + noH2(themeUI()) + '<p class="lbl sxlbl">Style</p><div class="themes">' + STYLES.map(t => '<button data-a="style" data-v="' + t[0] + '" aria-pressed="' + (STYLE === t[0]) + '"><i style="background:' + t[2] + ';border-color:' + t[3] + '"></i>' + t[1] + '</button>').join('') + '</div>';
+  if (setOpen.appear) styleSeen();
+  const app = '<p class="lbl sxlbl">Theme</p>' + noH2(themeUI()) + '<p class="lbl sxlbl">Style (tap to switch)</p>' + styleCards();
   const hs = (safeUI() + bcUI()).replace(/<h2>/g, '<h3>').replace(/<\/h2>/g, '</h3>');
   const data = (PROFILE !== 'personal' ? '<button class="sec" data-a="resetdemo" style="margin-right:8px">Reset demo data</button><button class="sec" data-a="clear" style="color:var(--bad)">' + (clearArm ? 'Tap again to erase everything' : 'Clear all data') + '</button>' : '<p class="lbl clrline">' + (S.url ? 'Erases everything on this device and in your connected Google Sheet: entries, bills, goals, plans, favorites, budgets, categories and Cash.' : 'Erases everything on this device: entries, bills, goals, plans, favorites, budgets, categories and Cash.') + '</p><button class="sec clrbtn" data-a="clear">Clear all data</button>');
   let h = '<div class="sth"><div style="display:flex;align-items:center;gap:4px"><button class="backbtn" data-a="setback" aria-label="Back to Stats">‹</button><h1 class="ttl">Settings</h1></div></div><div style="border-top:1px solid var(--line)"></div>';
   const TL = { auto: 'Auto', light: 'Light', gray: 'Gray', dark: 'Black' },
     stl = (STYLES.find(x => x[0] === STYLE) || STYLES[0])[1];
-  h += sxSec('set', 'appear', 'Appearance', app, (TL[theme] || 'Auto') + ' · ' + stl);
+  h += sxSec('set', 'appear', 'Appearance' + (styleNew() ? '<span class="newtag">NEW</span>' : ''), app, (TL[theme] || 'Auto') + ' · ' + stl);
   h += sxSec('set', 'home', 'Home screen', hs, 'Safe to spend ' + (safeOn() ? 'on' : 'off') + ' · Bank/Cash ' + (bcOn() ? 'on' : 'off'));
   const sy = syncUI();
   if (sy) h += sxSec('set', 'sync', 'Google Sheets sync', noH2(sy), S.url ? esc(S.sheetName || S.owner || 'Connected') : 'Not set up');
@@ -5172,7 +5528,7 @@ function catUI() {
 }
 
 /* ===== BACKUP / RESTORE ===== */
-function backupData() { return { app: 'ledger', ver: 1, profile: PROFILE, at: today(), bankcash: bcGet(), paymethods: payCustom(), tx: tx, bills: bills, budgets: budgets, goals: goals, recur: recur, plans: plans, favs: favs, cats: catsObj(), pays: pays } }
+function backupData() { return { app: 'ledger', ver: 1, profile: PROFILE, at: today(), bankcash: bcGet(), cashded: cdGet(), paymethods: payCustom(), tx: tx, bills: bills, budgets: budgets, goals: goals, recur: recur, plans: plans, favs: favs, cats: catsObj(), pays: pays } }
 
 function loadPending(text) {
   try { const d = JSON.parse(text); if (!d || d.app !== 'ledger' || !Array.isArray(d.tx)) throw 0;
@@ -5720,6 +6076,7 @@ function clearData() {
 }
 
 function clearLocalExtras() { try { localStorage.removeItem(K('bankcash'));
+    localStorage.removeItem(K('cashded'));
     localStorage.removeItem(K('paymethods')) } catch (e) {} pmEd = null; if (draft.pay && !payList([]).includes(draft.pay) && !draft.edit) draft.pay = '' }
 
 function wipeAll() {
