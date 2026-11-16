@@ -3482,6 +3482,91 @@ body.wnup #toast {
   margin-top: 10px;
   font-weight: 600
 }
+/* ===== v28: goal card (#47), category row mouse (#48) ===== */
+.golcard {
+  margin: 12px 0 0;
+  padding: 0 14px;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r)
+}
+.golhd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left
+}
+.golt {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700
+}
+.golt .lbl {
+  font-size: 13px;
+  font-weight: 400
+}
+.golsw {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--line);
+  transition: background .15s
+}
+.golsw i {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: #FFFFFF;
+  transition: left .15s
+}
+.golhd[aria-checked="true"] .golsw {
+  background: var(--acc)
+}
+.golhd[aria-checked="true"] .golsw i {
+  left: 21px
+}
+.golchips {
+  margin: 0;
+  padding-bottom: 12px
+}
+.golamt {
+  margin: -4px 0 0;
+  padding-bottom: 12px;
+  font-size: 12px
+}
+.achips.cscroll.fl {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28px);
+  mask-image: linear-gradient(to right, transparent 0, #000 28px)
+}
+.achips.cscroll.fr {
+  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 28px);
+  mask-image: linear-gradient(to left, transparent 0, #000 28px)
+}
+.achips.cscroll.fl.fr {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%)
+}
+@media (hover: hover) and (pointer: fine) {
+  .achips.cscroll.fl, .achips.cscroll.fr {
+    cursor: grab
+  }
+}
+.achips.cscroll.drag, .achips.cscroll.drag button {
+  cursor: grabbing;
+  user-select: none
+}
 </style>
 </head>
 <body>
@@ -3744,7 +3829,7 @@ function add() {
     typeSeg() +
     '<div class="amtblk">' + leftLine() +
     '<div class="amtrow"><p class="amt"><small>RM</small><span id="amtv" class="' + (c ? '' : 'dim') + '"' + (draft.type === 'income' && c ? ' style="color:' + moneyCol('inc') + '"' : '') + '>' + fmt(c / 100) + '</span></p><button class="amtx" id="amtx" data-a="amtclr" aria-label="Clear amount"' + (c ? '' : ' hidden') + '>×</button><button class="sec calcb" data-a="opencalc" aria-label="Open calculator"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg>Calc</button></div>' +
-    '</div>' + catChips(cs) +
+    '</div>' + catChips(cs) + goalCard() +
     (draft.edit ? '' : favRow()) +
     detRow() +
     (draft.edit ? '' : '<label class="chk"><input type="checkbox" id="rep"' + (draft.rep ? ' checked' : '') + '> Repeat every month</label>') +
@@ -3766,7 +3851,7 @@ function amtC() { const n = Math.round(parseFloat(draft.amt || '0') * 100); retu
 function setAmtC(c) { c = Math.max(0, Math.min(AMT_MAX, Math.round(c) || 0));
   draft.amt = c ? String(c / 100) : '' }
 
-function updAmt() { const c = amtC(),
+function updAmt() { golAmt(); const c = amtC(),
     el = $('#amtv'),
     x = $('#amtx'); if (el) { el.textContent = fmt(c / 100);
     el.classList.toggle('dim', !c);
@@ -3777,16 +3862,32 @@ function leftLine() { const a = inM(curKey),
 
 function longDate(d) { const p = d.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) }
 
+/* Save toward a goal (#47): card on Add with an on/off switch. The switch state lives outside `draft`
+ * (tied to the current draft object), so draft's fields are unchanged; a draft with a goal shows it on. */
+let goalSw = { d: null, on: false };
+function swOn() { return goalSw.d === draft ? goalSw.on : !!draft.goal }
+
+function goalCard() {
+  if (draft.type !== 'expense' || !goals.length) return '';
+  const on = swOn(),
+    g = draft.goal ? goals.find(x => x.id === draft.goal) : null;
+  return '<div class="golcard"><button class="golhd" data-a="goalsw" role="switch" aria-checked="' + on + '"><span class="golt">Save toward a goal <span class="lbl">optional</span></span><span class="golsw" aria-hidden="true"><i></i></span></button>' +
+    (on ? '<div class="chips achips golchips">' + goals.map(x => cchip('goalpick', x.id, x.name, catCol('Savings'), draft.goal === x.id)).join('') + '</div>' + (g ? '<p class="lbl golamt" id="golamt">' + golAmtText(g) + '</p>' : '') : '') + '</div>';
+}
+
+function golAmtText(g) { return 'RM ' + fmt(amtC() / 100) + ' goes to ' + esc(g.name) }
+
+function golAmt() { const el = document.getElementById('golamt'),
+    g = draft.goal ? goals.find(x => x.id === draft.goal) : null; if (el && g) el.innerHTML = golAmtText(g) }
+
 function detRow() {
-  const g = draft.type === 'expense' && draft.goal ? goals.find(x => x.id === draft.goal) : null,
-    pay = draft.type === 'expense' ? draft.pay : '';
-  const empty = !draft.note.trim() && !pay && !g && draft.date === today();
+  const pay = draft.type === 'expense' ? draft.pay : '';
+  const empty = !draft.note.trim() && !pay && draft.date === today();
   const parts = [];
   if (draft.note.trim()) parts.push(draft.note.trim());
   parts.push(dayLabel(draft.date));
   if (pay) parts.push(pay);
-  if (g) parts.push('Goal: ' + g.name);
-  return '<button class="detrow" id="detrow" data-a="detopen" aria-haspopup="dialog"><span class="deticon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></span><span class="dettxt"><b>' + esc(empty ? 'Add details' : parts.join(' · ')) + '</b><span class="lbl">Tap to add note, date, paid by or goal</span></span><span class="detedit">Edit</span></button>';
+  return '<button class="detrow" id="detrow" data-a="detopen" aria-haspopup="dialog"><span class="deticon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></span><span class="dettxt"><b>' + esc(empty ? 'Add details' : parts.join(' · ')) + '</b><span class="lbl">Tap to add note, date or paid by</span></span><span class="detedit">Edit</span></button>';
 }
 
 function cashBox() { // #42: what saving will do to Cash (expense + Paid by Cash only)
@@ -3803,7 +3904,7 @@ function detSheet() {
     '<div class="detbody" id="detbody">' +
     '<div class="dlab"><label for="note">Note</label><span class="lbl" id="notehelp">optional, but it helps you remember</span></div><input id="note" class="notein" type="text" aria-describedby="notehelp" placeholder="What was this for?" value="' + esc(draft.note) + '"><div class="chips" id="sugg"></div>' +
     '<div><p class="lbl" style="margin:0 0 4px">Date</p><button class="daterow datebtn" data-a="calopen" aria-haspopup="dialog" aria-label="Date, ' + esc(longDate(draft.date)) + '. Change date"><span class="lbl">Date</span><b>' + esc(longDate(draft.date)) + '</b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>' +
-    (ex ? '<div>' + payChips() + cashBox() + '</div>' + (goals.length ? '<div>' + goalChips() + '</div>' : '') : '') +
+    (ex ? '<div>' + payChips() + cashBox() + '</div>' : '') +
     '</div></div></div>';
 }
 
@@ -3849,6 +3950,41 @@ function catChips(cs) {
   return '<div class="chips achips cscroll">' + vis.map(c => cchip('cat', c, c, catCol(c), draft.cat === c)).join('') + (o.length > 6 ? '<button class="nchip" data-a="catmore" aria-expanded="' + catMore + '">' + (catMore ? 'Less' : 'More') + '</button>' : '') + '</div>';
 }
 let catMore = false;
+/* Category row with a mouse (#48 / B8): drag to scroll (mouse only, a drag past 5px never selects),
+ * vertical wheel scrolls sideways while the row overflows (page scrolls at the ends), edge fade on the
+ * side with more chips, selected chip kept in view. Touch scrolling is left to the browser. */
+function catRowInit() {
+  const r = document.querySelector('.achips.cscroll');
+  if (!r || r._w) return;
+  r._w = 1;
+  const max = () => r.scrollWidth - r.clientWidth,
+    fade = () => { const m = max();
+      r.classList.toggle('fl', m > 1 && r.scrollLeft > 1);
+      r.classList.toggle('fr', m > 1 && r.scrollLeft < m - 1) };
+  r._fade = fade;
+  const sel = r.querySelector('[aria-pressed="true"]');
+  if (sel && max() > 1) { const a = sel.offsetLeft - r.offsetLeft,
+      b = a + sel.offsetWidth; if (a < r.scrollLeft || b > r.scrollLeft + r.clientWidth) r.scrollLeft = Math.max(0, a - (r.clientWidth - sel.offsetWidth) / 2) }
+  r.addEventListener('scroll', fade, { passive: true });
+  r.addEventListener('wheel', e => { const m = max(); if (m <= 1 || e.ctrlKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return; const d = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? r.clientWidth : 1); if ((d < 0 && r.scrollLeft <= 0) || (d > 0 && r.scrollLeft >= m - 1)) return;
+    e.preventDefault();
+    r.scrollLeft += d }, { passive: false });
+  let st = null;
+  r.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0 || max() <= 1) return;
+    st = { x: e.clientX, l: r.scrollLeft, m: false, id: e.pointerId } });
+  r.addEventListener('pointermove', e => { if (!st || e.pointerId !== st.id) return; const dx = e.clientX - st.x; if (!st.m && Math.abs(dx) > 5) { st.m = true;
+      r.classList.add('drag'); try { r.setPointerCapture(e.pointerId) } catch (x) {} } if (st.m) { r.scrollLeft = st.l - dx;
+      e.preventDefault() } });
+  const end = () => { if (!st) return; if (st.m) r._dragEnd = Date.now();
+    st = null;
+    r.classList.remove('drag') };
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => r.addEventListener(n, end));
+  r.addEventListener('click', e => { if (r._dragEnd && Date.now() - r._dragEnd < 400) { e.stopPropagation();
+      e.preventDefault();
+      r._dragEnd = 0 } }, true);
+  fade();
+}
+if (typeof window !== 'undefined') window.addEventListener('resize', () => { const r = document.querySelector('.achips.cscroll'); if (r && r._fade) r._fade() });
 
 /* ===== STATS OVERVIEW & PIE ===== */
 function statsOverview() {
@@ -4306,6 +4442,7 @@ function render(keep) {
   document.querySelectorAll('nav button').forEach(b => { b.setAttribute('aria-current', String(b.dataset.v === vv)); if (b.dataset.v === 'bills') b.querySelector('.nl').textContent = 'Bills' + (nd ? ' (' + nd + ')' : '') });
   if (!keep) window.scrollTo(0, 0);
   wnFit();
+  if (view === 'add') catRowInit();
   const dbN = document.getElementById('detbody');
   if (dbN) { suggest(draft.note || '');
     dbN.scrollTop = dbT;
@@ -4620,6 +4757,7 @@ document.addEventListener('click', e => {
     render() } else if (a === 'type') { draft.type = v;
     draft.cat = CATS[v][0];
     draft.goal = 0;
+    goalSw = { d: draft, on: false };
     render() } else if (a === 'cat') { draft.cat = v; if (draft.goal && v !== 'Savings') draft.goal = 0;
     render() } else if (a === 'key') {
     const c = amtC();
@@ -4964,7 +5102,10 @@ document.addEventListener('click', e => {
       cashFix(g, false);
       save();
       render(true) });
-  } else if (a === 'goalpick') {
+  } else if (a === 'goalsw') { const on = !swOn();
+    goalSw = { d: draft, on: on }; if (!on && draft.goal) { draft.goal = 0;
+      draft.cat = draft.catPrev && CATS.expense.includes(draft.catPrev) ? draft.catPrev : CATS.expense[0] } render(true);
+    const h = document.querySelector('[data-a="goalsw"]'); if (h) h.focus() } else if (a === 'goalpick') {
     ensureSavingsCat();
     if (draft.goal === Number(v)) { draft.goal = 0;
       draft.cat = draft.catPrev && CATS.expense.includes(draft.catPrev) ? draft.catPrev : CATS.expense[0] } else { if (!draft.goal) draft.catPrev = draft.cat;
@@ -5017,10 +5158,12 @@ document.addEventListener('click', e => {
     render(true);
     toast('Password updated on this device');
     sync() } else if (a === 'disconnect') { disconnectFlow() } else if (a === 'showqr') { showQR() } else if (a === 'qrhide') { hideQR() } else if (a === 'scanqr') { openScan() } else if (a === 'scancancel') { closeScan() } else if (a === 'resetform') {
-    const prev = Object.assign({}, draft);
+    const prev = Object.assign({}, draft),
+      pOn = swOn();
     draft = { type: draft.type, amt: '', cat: CATS[draft.type][0], note: '', date: today(), pay: '', goal: 0, rep: false };
     render(true);
     toast('Form cleared', () => { draft = prev;
+      goalSw = { d: prev, on: pOn };
       render(true) });
   } else if (a === 'deledit') {
     const g = tx.find(t => t.id === draft.edit);
@@ -5664,10 +5807,11 @@ function payChips() {
 let statsTab = 'overview',
   revShow = false;
 const DEMO_VER = 9;
-const APP_VER = 'v27'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
+const APP_VER = 'v28'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
 /* Changelog (#46): newest first, plain words, 1–5 bullets (most important first). Every release adds
  * its entry at the top; the What's new card reads CHANGELOG[0], so this is the one place to edit. */
 const CHANGELOG = [
+  { ver: 'v28', date: '2026-11-16', lines: ['Save toward a goal moved to the Add screen', 'Category row scrolls with a mouse'] },
   { ver: 'v27', date: '2026-11-13', lines: ['Changelog added in Settings'] },
   { ver: 'v26', date: '2026-11-13', lines: ['Monthly PDF report in Stats', 'Reminder to save it at month end'] },
   { ver: 'v25', date: '2026-11-13', lines: ['Cash expenses now come off Cash', 'Visual style picker in Settings', 'What\'s new card after updates', 'CSV export fix for commas'] },
@@ -6093,11 +6237,6 @@ function ensureSavingsCat() { if (!CATS.expense.includes('Savings')) { CATS.expe
 
 function goalAdd(gid, amt) { const x = goals.find(y => y.id === gid); if (x) { x.saved = Math.max(0, x.saved + amt);
     saveB() } }
-
-function goalChips() {
-  if (!goals.length) return '<p class="lbl" style="margin:0 0 10px">Tip: create a savings goal in Plan to save toward it from here.</p>';
-  return '<p class="lbl" style="margin:0 0 4px">Save toward a goal (optional)</p><div class="chips achips">' + goals.map(g => cchip('goalpick', g.id, g.name, catCol('Savings'), draft.goal === g.id)).join('') + '</div>' + (draft.goal ? '<p class="lbl" style="margin:-4px 0 10px">Counts as savings: it comes off your balance and adds to this goal.</p>' : '');
-}
 
 /* ===== APPS SCRIPT SOURCE (shown to the user to paste) ===== */
 const SCRIPT_SRC = "// Ledger sync (Google Apps Script).\n// Easiest way: in the Ledger app open Sync, tap \"Copy script\", then paste it into a new project at script.google.com.\n// Then Deploy > New deployment > Web app > Who has access: Anyone > Deploy, and paste the Web app URL back into the app.\n// The script creates a Google Sheet called \"Ledger\" in a Drive folder called \"Ledger\": one tab per month, newest first,\n// tabs colored by year, and a Summary tab with each year as a collapsible group.\n\nconst TOKEN = '__TOKEN__';\nconst FOLDER = 'Ledger';\nconst FILE_NAME = '__NAME__';\nconst EMAIL = ''; // leave empty to email your own Google account (bill reminders)\nconst SHEET = 'Entries';\nconst SETTINGS = 'Settings';\nconst MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];\nconst YEAR_COLORS = ['#0B8F7A', '#D98A2B', '#4A7BD0', '#C4547A', '#8A6FD1', '#6B7A2E'];\n\nfunction ss_() {\n  let ss = SpreadsheetApp.getActiveSpreadsheet();\n  if (ss) return ss;\n  const props = PropertiesService.getScriptProperties();\n  const id = props.getProperty('SSID');\n  if (id) { try { return SpreadsheetApp.openById(id); } catch (e) {} }\n  ss = SpreadsheetApp.create(FILE_NAME);\n  props.setProperty('SSID', ss.getId());\n  try { ss.getSheets()[0].setName('Summary'); } catch (e) {}\n  try {\n    const it = DriveApp.getFoldersByName(FOLDER);\n    const f = it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER);\n    DriveApp.getFileById(ss.getId()).moveTo(f);\n  } catch (e) {}\n  return ss;\n}\n\nfunction entries_(ss) {\n  let sh = ss.getSheetByName(SHEET);\n  if (!sh) {\n    sh = ss.insertSheet(SHEET);\n    sh.appendRow(['id', 'date', 'type', 'category', 'amount', 'note', 'deleted', 'updated', 'sv', 'payment', 'goal']);\n    sh.getRange('A:B').setNumberFormat('@');\n    sh.getRange('F:F').setNumberFormat('@');\n    sh.setFrozenRows(1);\n    try { sh.hideSheet(); } catch (e) {}\n  }\n  return sh;\n}\n\n// Bills, budgets, goals, plans, favorites, categories and repeating entries live here as one JSON blob (last write wins).\nfunction cfgSheet_(ss) {\n  let sh = ss.getSheetByName(SETTINGS);\n  if (!sh) {\n    sh = ss.insertSheet(SETTINGS);\n    sh.getRange('A1:A2').setValues([['updated'], ['data']]);\n    sh.getRange('B1:B2').setNumberFormat('@');\n    try { sh.hideSheet(); } catch (e) {}\n  }\n  return sh;\n}\n\nfunction owner_() {\n  try { return Session.getEffectiveUser().getEmail(); } catch (e) { return ''; }\n}\n\nfunction fmtDate_(v, tz) {\n  return v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : String(v);\n}\nfunction mk_(r) { return String(r[1]).slice(0, 7); }\n\nfunction tot_(rows) {\n  let inc = 0, sp = 0, sv = 0;\n  rows.forEach(r => {\n    const a = Number(r[4]);\n    if (r[2] === 'income') inc += a; else if (Number(r[10])) sv += a; else sp += a;\n  });\n  return [inc, sp, sv, inc - sp - sv, rows.length];\n}\n\nfunction monthSheet_(ss, m, rows) {\n  let sh = ss.getSheetByName(m);\n  if (!sh) sh = ss.insertSheet(m);\n  sh.clear();\n  const y = Number(m.slice(0, 4)), mo = Number(m.slice(5));\n  rows = rows.slice().sort((a, b) => String(a[1]).localeCompare(String(b[1])) || Number(a[0]) - Number(b[0]));\n  const t = tot_(rows);\n  const body = rows.map(r => {\n    const a = Number(r[4]), inc = r[2] === 'income';\n    return [r[1], inc ? 'Income' : (Number(r[10]) ? 'Savings' : 'Expense'), r[3], r[5], inc ? a : -a, r[9] || ''];\n  });\n  sh.getRange(1, 1).setValue(MON[mo - 1] + ' ' + y).setFontWeight('bold').setFontSize(14);\n  sh.getRange(2, 1, 2, 5).setValues([['Income', 'Spent', 'Saved to goals', 'Left', 'Entries'], t]);\n  sh.getRange(2, 1, 1, 5).setFontWeight('bold');\n  sh.getRange(3, 1, 1, 4).setNumberFormat('#,##0.00');\n  sh.getRange(5, 1, 1, 6).setValues([['Date', 'Type', 'Category', 'Note', 'Amount (RM)', 'Paid by']]).setFontWeight('bold').setBackground('#E8F3F0');\n  if (body.length) {\n    sh.getRange(6, 1, body.length, 1).setNumberFormat('@');\n    sh.getRange(6, 1, body.length, 6).setValues(body);\n    sh.getRange(6, 5, body.length, 1).setNumberFormat('#,##0.00;[Red]-#,##0.00');\n  }\n  try { sh.setFrozenRows(5); sh.setTabColor(YEAR_COLORS[y % YEAR_COLORS.length]); sh.setColumnWidth(1, 95); sh.setColumnWidth(4, 220); } catch (e) {}\n}\n\nfunction order_(ss) {\n  const names = ss.getSheets().map(s => s.getName()).filter(n => /^\\d{4}-\\d{2}$/.test(n)).sort().reverse();\n  names.forEach((n, i) => {\n    try { ss.setActiveSheet(ss.getSheetByName(n)); ss.moveActiveSheet(i + 2); } catch (e) {}\n  });\n}\n\nfunction summary_(ss, by) {\n  let sh = ss.getSheetByName('Summary');\n  if (!sh) sh = ss.insertSheet('Summary', 0);\n  try { for (let i = 0; i < 2; i++) sh.getRange(1, 1, sh.getMaxRows(), 1).shiftRowGroupDepth(-1); } catch (e) {}\n  sh.clear();\n  const months = Object.keys(by).sort().reverse(), years = {};\n  months.forEach(m => { (years[m.slice(0, 4)] = years[m.slice(0, 4)] || []).push(m); });\n  const yrs = Object.keys(years).sort().reverse();\n  const curYear = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy');\n  const out = [['Year / Month', 'Income', 'Spent', 'Saved to goals', 'Left', 'Entries']];\n  const yearRows = [], monthRows = [], groups = [];\n  yrs.forEach(y => {\n    const yt = [0, 0, 0, 0, 0], list = years[y].map(m => ({ m: m, t: tot_(by[m]) }));\n    list.forEach(x => x.t.forEach((v, i) => { yt[i] += v; }));\n    out.push([y].concat(yt));\n    yearRows.push(out.length);\n    const start = out.length + 1;\n    list.forEach(x => { out.push([MON[Number(x.m.slice(5)) - 1]].concat(x.t)); monthRows.push({ row: out.length, m: x.m }); });\n    if (list.length) groups.push({ start: start, count: list.length, open: y === curYear });\n  });\n  sh.getRange(1, 1, out.length, 6).setValues(out);\n  sh.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#E8F3F0');\n  yearRows.forEach(r => sh.getRange(r, 1, 1, 6).setFontWeight('bold').setBackground('#F3F4F1'));\n  sh.getRange(2, 2, out.length, 4).setNumberFormat('#,##0.00');\n  monthRows.forEach(x => {\n    try { sh.getRange(x.row, 1).setFormula('=HYPERLINK(\"#gid=' + ss.getSheetByName(x.m).getSheetId() + '\",\"' + out[x.row - 1][0] + '\")'); } catch (e) {}\n  });\n  try { sh.setFrozenRows(1); sh.setColumnWidth(1, 150); } catch (e) {}\n  groups.forEach(g => {\n    try {\n      sh.getRange(g.start, 1, g.count, 1).shiftRowGroupDepth(1);\n      if (!g.open) sh.getRowGroup(g.start, 1).collapse();\n    } catch (e) {}\n  });\n}\n\nfunction rebuild_(ss, data, months) {\n  const by = {};\n  data.forEach(r => { if (!Number(r[6]) && /^\\d{4}-\\d{2}/.test(String(r[1]))) (by[mk_(r)] = by[mk_(r)] || []).push(r); });\n  const todo = {};\n  months.forEach(m => { todo[m] = 1; });\n  Object.keys(by).forEach(m => { if (!ss.getSheetByName(m)) todo[m] = 1; });\n  Object.keys(todo).forEach(m => monthSheet_(ss, m, by[m] || []));\n  order_(ss);\n  summary_(ss, by);\n}\n\nfunction doGet() {\n  return ContentService.createTextOutput('Ledger sync is running');\n}\n\nfunction doPost(e) {\n  const out = o => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);\n  let req;\n  try { req = JSON.parse(e.postData.contents); } catch (err) { return out({ ok: false, error: 'Bad request' }); }\n  if (req.token !== TOKEN) return out({ ok: false, error: 'Wrong token' });\n  const lock = LockService.getScriptLock();\n  lock.waitLock(20000);\n  try {\n    const ss = ss_(), sh = entries_(ss), now = Date.now(), tz = Session.getScriptTimeZone();\n    if (req.peek) {\n      // read-only check used when an app connects: lets it decide whether to pull, push or ask first\n      const lr = sh.getLastRow();\n      const flags = lr > 1 ? sh.getRange(2, 7, lr - 1, 1).getValues() : [];\n      const pv = cfgSheet_(ss).getRange('B1').getValue();\n      return out({ ok: true, peek: true, sid: ss.getId(), name: ss.getName(), owner: owner_(), entries: flags.filter(f => !Number(f[0])).length, hasCfg: (Number(pv) || 0) > 0 });\n    }\n    const last = sh.getLastRow();\n    const data = last > 1 ? sh.getRange(2, 1, last - 1, 11).getValues() : [];\n    data.forEach(r => { r[0] = String(r[0]); r[1] = fmtDate_(r[1], tz); });\n    const idx = {}, touched = {};\n    data.forEach((r, i) => { idx[r[0]] = i; });\n    (req.rows || []).forEach(t => {\n      const row = [String(t.id), t.date, t.type, t.cat, t.amt / 100, t.note || '', t.del ? 1 : 0, t.upd, now, t.pay || '', t.goal || 0];\n      const i = idx[String(t.id)];\n      if (i === undefined) { data.push(row); idx[String(t.id)] = data.length - 1; touched[mk_(row)] = 1; }\n      else if (t.upd >= Number(data[i][7])) { touched[mk_(data[i])] = 1; data[i] = row; touched[mk_(row)] = 1; }\n    });\n    if (data.length) sh.getRange(2, 1, data.length, 11).setValues(data);\n    const months = Object.keys(touched).filter(m => /^\\d{4}-\\d{2}$/.test(m));\n    if (months.length || !ss.getSheetByName('Summary')) rebuild_(ss, data, months);\n    const since = Number(req.since) || 0;\n    const rows = data.filter(r => Number(r[8]) >= since).map(r => ({\n      id: Number(r[0]), date: r[1], type: r[2], cat: r[3],\n      amt: Math.round(Number(r[4]) * 100), note: String(r[5]),\n      del: Number(r[6]) ? 1 : 0, upd: Number(r[7]), pay: String(r[9] || ''), goal: Number(r[10]) || 0\n    }));\n\n    const cs = cfgSheet_(ss), cv = cs.getRange('B1:B2').getValues(), cu = Number(cv[0][0]) || 0;\n    let cfg = null, cfgVer = null;\n    // A device may only overwrite the settings if it has seen the latest version (base). A blank or out-of-date device can never wipe them.\n    const accept = req.cfg && (cu === 0 || (req.cfg.base === undefined ? req.cfg.upd > cu : Number(req.cfg.base) === cu));\n    if (accept) {\n      const json = JSON.stringify(req.cfg.data || {});\n      if (json.length > 45000) return out({ ok: false, error: 'Settings too large' });\n      cfgVer = Math.max(Date.now(), cu + 1);\n      cs.getRange('B1:B2').setValues([[String(cfgVer)], [json]]);\n    } else if (cu > 0 && (req.cfg || cu > (Number(req.cfgKnown) || 0))) {\n      cfg = { upd: cu, data: JSON.parse(cv[1][0] || '{}') };\n    }\n    return out({ ok: true, rows: rows, cursor: now, cfg: cfg, cfgVer: cfgVer, sid: ss.getId(), url: ss.getUrl(), name: ss.getName(), owner: owner_() });\n  } finally {\n    lock.releaseLock();\n  }\n}\n\n// Daily email for bills that are overdue or due within 3 days. Add a time-driven trigger for this function.\nfunction sendBillReminders() {\n  const raw = cfgSheet_(ss_()).getRange('B2').getValue();\n  if (!raw || raw === 'data') return;\n  const bills = (JSON.parse(raw).bills) || [];\n  const tz = Session.getScriptTimeZone(), now = new Date();\n  const k = Utilities.formatDate(now, tz, 'yyyy-MM');\n  const td = Number(Utilities.formatDate(now, tz, 'd'));\n  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();\n  const lines = [];\n  bills.forEach(b => {\n    if (b.paid && b.paid[k]) return;\n    if ((b.from && k < b.from) || (b.to && k > b.to)) return;\n    const d = Math.min(b.day, dim) - td;\n    if (d > 3) return;\n    lines.push('- ' + b.name + ': RM ' + (b.amt / 100).toFixed(2) + (d < 0 ? ' (overdue)' : d === 0 ? ' (due today)' : ' (due in ' + d + ' days)'));\n  });\n  if (!lines.length) return;\n  MailApp.sendEmail(EMAIL || Session.getEffectiveUser().getEmail(), 'Bills due soon', lines.join('\\n'));\n}\n";
