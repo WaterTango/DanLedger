@@ -3567,6 +3567,28 @@ body.wnup #toast {
   cursor: grabbing;
   user-select: none
 }
+/* v29 B10: Biggest expense value wraps instead of widening the page */
+.rw.fr>span.wl {
+  flex: none
+}
+.rw.fr>span.wv {
+  flex: 0 1 auto;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere
+}
+/* v29 B11: Safe to spend amount ≥4.5:1 in Classic light */
+:root[data-style="classic"][data-theme="light"] .safe b {
+  color: color-mix(in srgb, var(--acc) 90%, var(--ink))
+}
+/* v29 B12: long one-word category names wrap in the pie legend */
+.pie ul {
+  min-width: 0
+}
+.pie li span:nth-child(2) {
+  min-width: 0;
+  overflow-wrap: anywhere
+}
 </style>
 </head>
 <body>
@@ -4693,7 +4715,7 @@ function sample() {
     let rem = fill;
     for (let q = 0; q < n; q++) { const a = q < n - 1 ? Math.round(fill / n) : rem;
       rem -= a;
-      rows.push({ type: 'expense', cat: 'Food', note: ['Weekend dinner out', 'Dinner with friends', 'Weekend brunch'][q] || 'Dinner out', amt: a, pay: 'QR', date: k + '-' + pad2(j === 0 ? Math.max(1, T - q * 4) : 27 - q * 7) }) }
+      rows.push({ type: 'expense', cat: 'Food', note: ['Weekend dinner out', 'Dinner with friends', 'Weekend brunch'][q] || 'Dinner out', amt: a, pay: 'QR', date: k + '-' + pad2(j === 0 ? Math.max(1, T - q * 4) : Math.max(1, 27 - q * 7)) }) }
     rows.forEach(r => tx.push(Object.assign({ id: nid(), upd: Date.now() }, r)));
   }
   for (let f = 1; f <= 6; f++) {
@@ -5049,16 +5071,17 @@ document.addEventListener('click', e => {
     loadPending((el && el.value) || '') } else if (a === 'rcancel') { pend = null;
     render(true) } else if (a === 'dorestore') {
     const d = pend.d,
+      kp = pend.keep || {},
       now = Date.now();
     tx = d.tx;
-    bills = d.bills || [];
-    budgets = d.budgets || {};
-    goals = d.goals || [];
-    recur = d.recur || [];
-    plans = d.plans || [];
-    favs = d.favs || [];
-    pays = Array.isArray(d.pays) ? d.pays : [];
-    applyCats(d.cats || null);
+    if (!kp.bills) bills = d.bills || [];
+    if (!kp.budgets) budgets = d.budgets || {};
+    if (!kp.goals) goals = d.goals || [];
+    if (!kp.recur) recur = d.recur || [];
+    if (!kp.plans) plans = d.plans || [];
+    if (!kp.favs) favs = d.favs || [];
+    if (!kp.pays) pays = Array.isArray(d.pays) ? d.pays : [];
+    if (!kp.cats) applyCats(d.cats || null);
     Object.keys(budgets).forEach(k => { if (typeof budgets[k] === 'number') budgets[k] = { rm: budgets[k] } });
     if (d.bankcash && typeof d.bankcash === 'object') bcSet(d.bankcash);
     cdSet(d.cashded && typeof d.cashded === 'object' && !Array.isArray(d.cashded) ? d.cashded : {}); // old backups have none
@@ -5807,10 +5830,11 @@ function payChips() {
 let statsTab = 'overview',
   revShow = false;
 const DEMO_VER = 9;
-const APP_VER = 'v28'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
+const APP_VER = 'v29'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
 /* Changelog (#46): newest first, plain words, 1–5 bullets (most important first). Every release adds
  * its entry at the top; the What's new card reads CHANGELOG[0], so this is the one place to edit. */
 const CHANGELOG = [
+  { ver: 'v29', date: '2026-11-16', card: false, lines: ['Quick add follows renamed or deleted categories', 'Long notes fit in the monthly review', 'Safe to spend easier to read in Classic light', 'Safer restore: damaged backups are checked first'] },
   { ver: 'v28', date: '2026-11-16', lines: ['Save toward a goal moved to the Add screen', 'Category row scrolls with a mouse'] },
   { ver: 'v27', date: '2026-11-13', lines: ['Changelog added in Settings'] },
   { ver: 'v26', date: '2026-11-13', lines: ['Monthly PDF report in Stats', 'Reminder to save it at month end'] },
@@ -5842,7 +5866,7 @@ const CHANGELOG = [
 ];
 /* What's new card (#44): rewritten every release from its user-visible items. lines [] = no card.
  * act.go is limited to WN_GO. Shown once per version (K('wnseen')), personal profile with history only. */
-const WHATS_NEW = { ver: CHANGELOG[0].ver, lines: CHANGELOG[0].lines.slice(0, 5), act: null }; // act: optional {label, go}
+const WHATS_NEW = { ver: CHANGELOG[0].ver, lines: CHANGELOG[0].card === false ? [] : CHANGELOG[0].lines.slice(0, 5), act: null }; // act: optional {label, go}
 const WN_GO = ['appearance', 'bankcash'];
 let wnShown = false;
 function wnNum(v) { return parseInt(String(v || '').replace(/^v/, ''), 10) || 0 }
@@ -5932,7 +5956,7 @@ function reviewView() {
   const li = (arr, c) => arr.length ? arr.map(x => '<p class="rvp"><i class="dot" style="background:' + c + '"></i>' + esc(x) + '</p>').join('') : '<p class="lbl">Nothing notable.</p>';
   let h = '<h2>' + mlabel(ym) + ' at a glance</h2>' + row('Income', 'RM ' + fmt(r.inc / 100)) + row('Spent', 'RM ' + fmt(r.exp / 100)) + row('Kept', (r.kept < 0 ? '-' : '') + 'RM ' + fmt(Math.abs(r.kept) / 100) + (r.rate !== null ? ' (' + r.rate + '%)' : ''), r.kept < 0 ? 'bad' : 'pos') + (r.sv ? row('Of that, moved to goals', 'RM ' + fmt(r.sv / 100)) : '');
   h += '<h2>Wins</h2>' + li(r.wins, 'var(--acc)') + '<h2>Watch out</h2>' + li(r.watch, 'var(--bad)');
-  h += '<h2>Highlights</h2>' + (r.big ? row('Biggest expense', esc(r.big.note || r.big.cat) + ', RM ' + fmt(r.big.amt / 100)) : '') + (r.tops.length ? '<p class="lbl" style="margin:6px 0 0">Top spending: ' + esc(r.tops.join(', ')) + '</p>' : '');
+  h += '<h2>Highlights</h2>' + (r.big ? '<div class="rw fr"><span class="wl">Biggest expense</span><span class="wv">' + esc(r.big.note || r.big.cat) + ', RM\u00a0' + fmt(r.big.amt / 100) + '</span></div>' : '') + (r.tops.length ? '<p class="lbl" style="margin:6px 0 0">Top spending: ' + esc(r.tops.join(', ')) + '</p>' : '');
   if (r.bills[1]) h += row('Bills paid', r.bills[0] + ' of ' + r.bills[1]);
   if (r.plans[1]) h += row('Planned purchases bought', r.plans[0] + ' of ' + r.plans[1]);
   h += '<h2>Next month</h2>' + li(r.tips, '#D98A2B');
@@ -6036,6 +6060,7 @@ function moveCat(o, n) {
       t.upd = now } });
   plans.forEach(x => { if (x.cat === o) x.cat = n });
   recur.forEach(x => { if (x.cat === o) x.cat = n });
+  favs.forEach(x => { if (x.cat === o) x.cat = n }); // B9: quick add follows rename/delete
   if (fq.cat === o) fq.cat = n;
   if (draft.cat === o) draft.cat = n;
   if (pd.cat === o) pd.cat = n;
@@ -6100,9 +6125,37 @@ function catUI() {
 /* ===== BACKUP / RESTORE ===== */
 function backupData() { return { app: 'ledger', ver: 1, profile: PROFILE, at: today(), bankcash: bcGet(), cashded: cdGet(), paymethods: payCustom(), tx: tx, bills: bills, budgets: budgets, goals: goals, recur: recur, plans: plans, favs: favs, cats: catsObj(), pays: pays } }
 
+// B13a: check each part of a backup before it can be restored.
+// Bad entries are skipped; a part with the wrong shape keeps this device's current data.
+// A part missing from the file (older backups) restores empty, as before.
+const BK_LISTS = [['bills', 'Bills'], ['goals', 'Goals'], ['recur', 'Repeat entries'], ['plans', 'Planned purchases'], ['favs', 'Quick add'], ['pays', 'Paycheck plans']];
+const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+function okEntry(t) {
+  return isObj(t) && (typeof t.id === 'number' ? isFinite(t.id) : typeof t.id === 'string' && t.id !== '') &&
+    typeof t.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.date) && !isNaN(new Date(t.date + 'T00:00:00')) &&
+    (t.type === 'expense' || t.type === 'income') && Number.isInteger(t.amt) && t.amt >= 0 &&
+    typeof t.cat === 'string' && t.cat !== '';
+}
+function cleanBackup(d) {
+  const c = Object.assign({}, d), keep = {}, notes = [], bad = [];
+  c.tx = d.tx.filter(okEntry);
+  const skipped = d.tx.length - c.tx.length;
+  BK_LISTS.forEach(([k, l]) => { if (d[k] === undefined || d[k] === null) return;
+    if (!Array.isArray(d[k])) { keep[k] = 1; bad.push(l); delete c[k]; return }
+    c[k] = d[k].filter(isObj) });
+  if (d.budgets !== undefined && d.budgets !== null) { if (!isObj(d.budgets)) { keep.budgets = 1; bad.push('Budgets'); delete c.budgets } else { const b = {}; Object.keys(d.budgets).forEach(k => { const v = d.budgets[k]; if ((typeof v === 'number' && isFinite(v)) || isObj(v)) b[k] = v }); c.budgets = b } }
+  if (d.cats !== undefined && d.cats !== null) { const ok = isObj(d.cats) && ['expense', 'income'].every(k => Array.isArray(d.cats[k]) && d.cats[k].length && d.cats[k].every(x => typeof x === 'string' && x)); if (!ok) { keep.cats = 1; bad.push('Categories'); delete c.cats } else if (d.cats.col !== undefined && !isObj(d.cats.col)) c.cats = Object.assign({}, d.cats, { col: {} }) }
+  if (skipped) notes.push(skipped + (skipped === 1 ? ' entry' : ' entries') + ' skipped (missing or invalid date, amount, type or category).');
+  bad.forEach(l => notes.push(l + ' could not be read, keeping your current ' + l.toLowerCase() + '.'));
+  const anyPart = c.tx.length || BK_LISTS.some(([k]) => Array.isArray(c[k]) && c[k].length) || (c.budgets && Object.keys(c.budgets).length) || c.cats;
+  return { d: c, keep: keep, notes: notes, empty: !anyPart && (skipped > 0 || bad.length > 0) };
+}
+
 function loadPending(text) {
   try { const d = JSON.parse(text); if (!d || d.app !== 'ledger' || !Array.isArray(d.tx)) throw 0;
-    pend = { d: d, at: d.at || 'unknown date', n: d.tx.filter(t => !t.del).length, b: (d.bills || []).length };
+    const cb = cleanBackup(d);
+    if (cb.empty) { pend = null; render(true); toast('This backup file is damaged'); return }
+    pend = { d: cb.d, keep: cb.keep, notes: cb.notes, at: typeof d.at === 'string' ? d.at : 'unknown date', n: cb.d.tx.filter(t => !t.del).length, b: (cb.d.bills || []).length };
     render(true) } catch (e) { pend = null;
     toast('That is not a Ledger backup') }
 }
@@ -6111,7 +6164,7 @@ function backupUI() {
   let h = '<h2>Backup and restore</h2><div class="bact"><button class="sec" data-a="backup">Download backup</button><label class="sec filebtn">Restore from file<input id="rfile" type="file" accept=".json,application/json" hidden></label></div>';
   h += '<button class="sec" style="margin-top:8px" data-a="bktxt">' + (bkShow ? 'Hide backup text' : 'Show backup text') + '</button>';
   if (bkShow) h += '<textarea readonly rows="6" style="margin-top:8px">' + esc(JSON.stringify(backupData())) + '</textarea><textarea id="rtxt" rows="3" style="margin-top:8px" placeholder="Paste backup text here to restore"></textarea><button class="sec" style="margin-top:8px" data-a="rtext">Load pasted text</button>';
-  if (pend) h += '<div class="bedit" style="margin-top:10px"><p style="margin:0">Backup from ' + esc(pend.at) + ': ' + pend.n + ' entries, ' + pend.b + ' bills. This replaces your current ' + (PROFILE === 'personal' ? 'personal' : 'demo') + ' data.</p><button class="pri" data-a="dorestore">Replace current data</button><button class="sec" data-a="rcancel">Cancel</button></div>';
+  if (pend) h += '<div class="bedit" style="margin-top:10px"><p style="margin:0">Backup from ' + esc(pend.at) + ': ' + pend.n + ' entries, ' + pend.b + ' bills. This replaces your current ' + (PROFILE === 'personal' ? 'personal' : 'demo') + ' data.</p>' + (pend.notes && pend.notes.length ? '<p class="lbl bknote" style="margin:6px 0 0">' + pend.notes.map(esc).join(' ') + '</p>' : '') + '<button class="pri" data-a="dorestore">Replace current data</button><button class="sec" data-a="rcancel">Cancel</button></div>';
   return h;
 }
 
