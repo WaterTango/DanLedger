@@ -3889,9 +3889,9 @@ function syncFailed() { return !busy && !!syncMsg && !/^(Synced|Syncing)/.test(s
 function syncTop() {
   if (PROFILE !== 'personal') return '<span id="synctop"></span>';
   if (!S.url) return '<div id="synctop" class="acctop"><button class="chip2 loginchip" data-a="gosync" style="' + (thm() === 'light' ? 'background:#1F7A45;border-color:#1F7A45;color:#FFFFFF' : 'background:#5FD08A;border-color:#5FD08A;color:#06201C') + '">Log in</button></div>';
-  const nm = S.sheetName || S.owner || 'Google Sheet',
+  const nm = S.sheetName || 'Google Sheet',
     st = syncFailed() ? '<button class="stop sfail" data-a="gosync"><i class="adot"></i>Sync failed, tap</button>' : '<span class="stop lbl">' + (busy ? 'Syncing…' : S.lastAt ? 'Synced ' + ago(S.lastAt) + ' · ' + when(S.lastAt) : 'Not synced yet') + '</span>';
-  return '<div id="synctop" class="acctop"><button class="chip2 who" data-a="sync" title="' + esc(S.owner || '') + '" aria-label="Sync now. Connected to ' + esc(nm) + '">↻ ' + esc(nm.slice(0, 28)) + '</button>' + st + '</div>';
+  return '<div id="synctop" class="acctop"><button class="chip2 who" data-a="sync" aria-label="Sync now. Connected to ' + esc(nm) + '">↻ ' + esc(nm.slice(0, 28)) + '</button>' + st + '</div>';
 }
 
 /* ===== ADD SCREEN (amount, details, calendar) ===== */
@@ -5942,10 +5942,11 @@ function payChips() {
 let statsTab = 'overview',
   revShow = false;
 const DEMO_VER = 9;
-const APP_VER = 'v30'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
+const APP_VER = 'v31'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
 /* Changelog (#46): newest first, plain words, 1–5 bullets (most important first). Every release adds
  * its entry at the top; the What's new card reads CHANGELOG[0], so this is the one place to edit. */
 const CHANGELOG = [
+  { ver: 'v31', date: '2026-11-17', card: false, lines: ['Your Google account email is no longer shown in the app'] },
   { ver: 'v30', date: '2026-11-17', act: { label: 'Set cash', go: 'bankcash' }, lines: ['Cash in Hand is saved to your account and syncs across devices', 'Home shows Amount in Bank and Cash in Hand', 'Move money between Bank and Cash with one button', 'Set your cash once after this update'] },
   { ver: 'v29', date: '2026-11-16', card: false, lines: ['Quick add follows renamed or deleted categories', 'Long notes fit in the monthly review', 'Safe to spend easier to read in Classic light', 'Safer restore: damaged backups are checked first'] },
   { ver: 'v28', date: '2026-11-16', lines: ['Save toward a goal moved to the Add screen', 'Category row scrolls with a mouse'] },
@@ -6135,7 +6136,7 @@ function settingsView() {
   h += sxSec('set', 'appear', 'Appearance' + (styleNew() ? '<span class="newtag">NEW</span>' : ''), app, (TL[theme] || 'Auto') + ' · ' + stl);
   h += sxSec('set', 'home', 'Home screen', hs, 'Safe to spend ' + (safeOn() ? 'on' : 'off') + ' · Bank/Cash ' + (bcOn() ? 'on' : 'off'));
   const sy = syncUI();
-  if (sy) h += sxSec('set', 'sync', 'Google Sheets sync', noH2(sy), S.url ? esc(S.sheetName || S.owner || 'Connected') : 'Not set up');
+  if (sy) h += sxSec('set', 'sync', 'Google Sheets sync', noH2(sy), S.url ? esc(S.sheetName || 'Connected') : 'Not set up');
   h += sxSec('set', 'cats', 'Categories', noH2(catUI()), CATS.expense.length + ' expense · ' + CATS.income.length + ' income');
   h += sxSec('set', 'pm', 'Payment methods', noH2(pmUI()), payList([]).length + ' methods');
   h += sxSec('set', 'backup', 'Backup and restore', noH2(backupUI()), 'Download or restore');
@@ -6565,7 +6566,7 @@ function showQR() {
   if (PROFILE !== 'personal' || !S.url || !S.token) return;
   const link = location.href.split('#')[0] + '#c=' + connCode();
   let n = 60;
-  document.body.insertAdjacentHTML('beforeend', '<div class="shwrap" id="qrsheet"><div class="shbg" data-a="qrhide"></div><div class="sheet" role="dialog" aria-label="Connect another device"><h2 style="margin:0">Connect another device</h2><div class="qrbox">' + QRM.svg(link) + '</div>' + ((S.sheetName || S.owner) ? '<p class="qrname">' + esc(S.sheetName || S.owner) + '</p>' : '') + '<p class="lbl" style="margin:0">Anyone who scans this can open your Sheet. Only show it to the person you are setting up.</p><p class="lbl" id="qrcount" style="margin:0">Hides in 60 s</p><button class="sec" data-a="qrhide">Hide</button></div></div>');
+  document.body.insertAdjacentHTML('beforeend', '<div class="shwrap" id="qrsheet"><div class="shbg" data-a="qrhide"></div><div class="sheet" role="dialog" aria-label="Connect another device"><h2 style="margin:0">Connect another device</h2><div class="qrbox">' + QRM.svg(link) + '</div>' + '<p class="qrname">' + esc(S.sheetName || 'Ledger') + '</p>' + '<p class="lbl" style="margin:0">Anyone who scans this can open your Sheet. Only show it to the person you are setting up.</p><p class="lbl" id="qrcount" style="margin:0">Hides in 60 s</p><button class="sec" data-a="qrhide">Hide</button></div></div>');
   qrT = setInterval(() => { n--; if (n <= 0) { hideQR(); return } const c = document.getElementById('qrcount'); if (c) c.textContent = 'Hides in ' + n + ' s' }, 1000);
 }
 
@@ -6687,7 +6688,7 @@ function syncLabel() {
   return S.lastAt ? 'Synced ' + when(S.lastAt) : 'Not synced yet';
 }
 
-function who() { return S.url ? '<button class="chip2 who" data-a="gosync" title="' + esc(S.owner || '') + '">☁ ' + esc((S.sheetName || 'Linked').slice(0, 28)) + '</button>' : '' }
+function who() { return S.url ? '<button class="chip2 who" data-a="gosync">☁ ' + esc((S.sheetName || 'Linked').slice(0, 28)) + '</button>' : '' }
 
 function topBadge() { return (PROFILE === 'personal' && S.url && view !== 'home' && view !== 'sync') ? '<div class="syncbar">' + who() + '</div>' : '' }
 
@@ -6723,7 +6724,7 @@ function syncPage() {
     h += '<div class="stepc"><b>3. Paste the URL</b><input id="surl" type="url" placeholder="https://script.google.com/macros/s/…/exec" style="margin-top:8px" value="' + esc(tmpUrl) + '"><button class="pri" style="margin-top:8px" data-a="connect">Connect and sync</button></div>';
     return h;
   }
-  h += (S.sid ? '' : '<div class="stepc"><b class="bad">Update your script</b><p class="lbl" style="margin:4px 0 0">This script is out of date. Update it so switching accounts or devices can never overwrite your Sheet. Open Password below, type your current password, tap Copy updated script, paste it over the old code, then Deploy, Manage deployments, edit, New version, Deploy.</p></div>') + '<div class="callout"><b>Connected to ' + esc(S.sheetName || 'your Google Sheet') + '</b>' + (S.owner ? '<p class="lbl" style="margin:2px 0 0">Google account: ' + esc(S.owner) + '</p>' : '') + '<span style="display:none"></span><p class="lbl" id="syncmsg" style="margin:4px 0 0">' + esc(syncLabel()) + '</p></div>';
+  h += (S.sid ? '' : '<div class="stepc"><b class="bad">Update your script</b><p class="lbl" style="margin:4px 0 0">This script is out of date. Update it so switching accounts or devices can never overwrite your Sheet. Open Password below, type your current password, tap Copy updated script, paste it over the old code, then Deploy, Manage deployments, edit, New version, Deploy.</p></div>') + '<div class="callout"><b>Connected to ' + esc(S.sheetName || 'your Google Sheet') + '</b>' + '<span style="display:none"></span><p class="lbl" id="syncmsg" style="margin:4px 0 0">' + esc(syncLabel()) + '</p></div>';
   h += '<button class="pri" style="margin-top:10px" data-a="sync">Sync now</button>';
   if (S.sheetUrl) h += '<a class="sec linkbtn" href="' + esc(S.sheetUrl) + '" target="_blank" rel="noopener">Open Google Sheet</a>';
   h += '<div class="stepc"><b>Add another device</b><p class="lbl" style="margin:4px 0 8px">Open this same app on it, go to Sync settings, and paste this code.</p><button class="sec" data-a="copycode">Copy connection code</button>' + (S.token ? '<button class="sec" data-a="showqr" style="margin-left:8px">Show QR</button>' : '') + (codeShow ? '<textarea readonly rows="3" style="margin-top:8px">' + esc(connCode()) + '</textarea>' : '') + '</div>';
