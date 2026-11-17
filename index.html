@@ -3589,6 +3589,59 @@ body.wnup #toast {
   min-width: 0;
   overflow-wrap: anywhere
 }
+/* v30 #49 Home design D: Amount in Bank (filled) | Cash in Hand (outlined) + Move money button */
+.bcrow.bcd {
+  gap: 8px;
+  border: 0
+}
+.bcrow .bcb.bcbank, .bcrow .bcb.bccash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 64px;
+  text-align: center
+}
+.bcrow .bcb.bcbank {
+  background: var(--acc);
+  border: 2px solid var(--acc);
+  color: var(--on)
+}
+.bcrow .bcb.bcbank .lbl, .bcrow .bcb.bcbank .bcn {
+  color: var(--on)
+}
+.bcrow .bcb.bccash {
+  background: var(--card);
+  border: 2px solid var(--acc)
+}
+.bcrow .bcb.bccash.bcfl {
+  background: var(--tint)
+}
+.bcn {
+  font-size: 18px;
+  font-weight: 600
+}
+.bcb.bcmv {
+  display: block;
+  width: 100%;
+  margin: 8px 0 0;
+  border: 1px solid var(--acc);
+  background: var(--card);
+  color: var(--acc);
+  font-weight: 600;
+  min-height: 48px;
+  text-align: center
+}
+.mvi {
+  font-size: 18px;
+  margin-right: 6px;
+  vertical-align: -1px
+}
+.cashold {
+  margin: 6px 0 0;
+  color: var(--bad)
+}
 </style>
 </head>
 <body>
@@ -3805,7 +3858,7 @@ function home() {
     exp = sum(a, 'expense'),
     bal = inc - exp;
   let h = '<div class="htop"><select class="msel mpill" data-ym aria-label="Month">' + monthOpts2() + '</select>' + syncTop() + '</div>' +
-    '<section class="hero"><div class="herob"><p class="lbl">' + (ym === curKey ? 'Left this month' : 'Left in ' + mlabel(ym)) + '</p><p class="big">' + (bal < 0 ? '−' : '') + 'RM ' + fmt(Math.abs(bal) / 100) + '</p></div>' +
+    '<section class="hero"><div class="herob"><p class="lbl">' + (ym === curKey ? 'Left this month (Bank + Cash)' : 'Left in ' + mlabel(ym)) + '</p><p class="big">' + (bal < 0 ? '−' : '') + 'RM ' + fmt(Math.abs(bal) / 100) + '</p></div>' +
     '<div class="icards"><div class="ic"><span class="lbl">Income</span><b style="color:' + moneyCol('inc') + '">RM ' + fmt(inc / 100) + '</b></div><div class="ic"><span class="lbl">Spent</span><b style="color:' + moneyCol('exp') + '">RM ' + fmt(exp / 100) + '</b></div></div></section>' +
     bcRow() + safeCard();
   if (!a.length && !fq.all) {
@@ -4043,9 +4096,70 @@ let bcOpen = false,
   bcMode = 'wd',
   bcAmt = '';
 
-function bcGet() { try { const v = JSON.parse(localStorage.getItem(K('bankcash')) || '{}'); return { cash: Math.round(+v.cash) || 0 } } catch (e) { return { cash: 0 } } }
+/* v30 #49: Cash in Hand is one value tied to the account (Settings tab of the Sheet, rows 3-6).
+ * K('cash') = {base, ver, ids, pend, nids, sid}: base/ver/ids as last seen from the Sheet, pend = changes not yet
+ * confirmed ({id, d} add/subtract or {id, set, seen} set), nids = counted expense ids not yet sent.
+ * Cash in Hand = base (+ pend) - every counted expense that is still an expense paid by Cash. The amount taken
+ * off is never stored, so an entry can never come off twice (other devices, new device, restore). */
+const CR0 = () => ({ base: 0, ver: 0, ids: [], pend: [], nids: [], sid: '' });
+function crGet() { try { const v = JSON.parse(localStorage.getItem(K('cash')) || 'null'); if (v && typeof v === 'object') return { base: Math.round(+v.base) || 0, ver: +v.ver || 0, ids: Array.isArray(v.ids) ? v.ids.map(String) : [], pend: Array.isArray(v.pend) ? v.pend.filter(o => o && o.id) : [], nids: Array.isArray(v.nids) ? v.nids.map(String) : [], sid: typeof v.sid === 'string' ? v.sid : '' } } catch (e) {} return CR0() }
 
-function bcSet(v) { try { localStorage.setItem(K('bankcash'), JSON.stringify({ cash: Math.round(+v.cash) || 0 })) } catch (e) {} }
+function crSet(r) { try { localStorage.setItem(K('cash'), JSON.stringify(r)) } catch (e) {} }
+
+function crIds(r) { const x = new Set(r.ids); r.nids.forEach(k => x.add(k)); return x }
+
+function crBase(r) { let v = r.base; r.pend.forEach(o => { v = o.set != null ? Math.round(+o.set) || 0 : v + (Math.round(+o.d) || 0) }); return v }
+
+function cashDedMap(r) { r = r || crGet(); const ids = crIds(r), m = {}; if (!ids.size) return m; tx.forEach(t => { const k = String(t.id); if (ids.has(k)) { const w = cashWant(t); if (w) m[k] = w } }); return m }
+
+function cashDed(r) { const m = cashDedMap(r); let d = 0; for (const k in m) d += m[k]; return d }
+
+function cashNow() { const r = crGet(); return crBase(r) - cashDed(r) }
+
+function cashInit() { try { if (localStorage.getItem(K('cash')) === null) { localStorage.removeItem(K('bankcash')); // v29 per-device values are cleared once; entries and the Sheet are untouched
+      localStorage.removeItem(K('cashded'));
+      crSet(CR0()) } } catch (e) {} }
+
+function cashDirty() { if (PROFILE !== 'personal') return; if (S.url) { S.dirtyAt = Date.now();
+    saveS() } syncSoon() }
+
+function cashOp(o) { const r = crGet();
+  o.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  r.pend.push(o); if (PROFILE !== 'personal') { r.base = crBase(r); // demo: never synced, apply at once
+    r.ver += r.pend.length;
+    r.pend = [] } crSet(r);
+  cashDirty() }
+
+function cashAdd(d) { d = Math.round(d) || 0; if (d) cashOp({ d: d }) }
+
+function bcGet() { return { cash: cashNow() } }
+
+// Set what Cash in Hand shows. Applied only if no other device changed Cash first (seen = expected version).
+function bcSet(v) { const r = crGet();
+  cashOp({ set: (Math.round(+v.cash) || 0) + cashDed(r), seen: r.ver + r.pend.length }) }
+
+function cashReq() { const r = crGet(); if (r.sid && S.sid && r.sid !== S.sid) { r.pend = []; // changes made for another account are dropped
+    r.nids = [];
+    r.ids = [];
+    r.base = 0;
+    r.ver = 0;
+    r.sid = '';
+    crSet(r) } return { ops: r.pend.slice(0, 300), ids: r.nids.slice(0, 5000), ver: r.ver } }
+
+function cashMerge(c, sent, sid) { const r = crGet(),
+    ack = c.ack && typeof c.ack === 'object' ? c.ack : {},
+    srv = Array.isArray(c.ids) ? c.ids.map(String) : [],
+    has = new Set(srv),
+    sn = new Set(sent.ids.map(String));
+  let stale = false;
+  r.pend = r.pend.filter(o => { const a = ack[o.id]; if (a === undefined) return true; if (a === 'stale') stale = true; return false });
+  r.nids = r.nids.filter(k => !(sn.has(k) && has.has(k)));
+  r.ids = srv;
+  r.base = Math.round(+c.base) || 0;
+  r.ver = +c.ver || 0;
+  if (sid) r.sid = sid;
+  crSet(r);
+  S.cashOld = false; if (stale) toast('Cash was changed on another device. Check Cash and set it again.') }
 
 function bcOn() { try { return localStorage.getItem(K('bcshow')) !== '0' } catch (e) { return true } }
 
@@ -4361,32 +4475,27 @@ function pdfNudge() {
   return '<section class="nudgecard" aria-labelledby="pdfnt"><h2 id="pdfnt">' + mn + ' report is ready</h2><p class="lbl">' + when + ' Save it as a PDF.</p><div class="wnbtns"><button class="pri" data-a="pdfnow">Download PDF</button><button class="sec" data-a="pdflater">Later</button></div></section>';
 }
 
-/* Cash-paid expenses (#42). K('cashded') = {entryId: cents taken from Cash}, per device.
- * Only entries recorded here ever move Cash; old entries and synced-in changes never do.
- * cashFix(t, track) sets the entry's deduction to what it should be now and moves Cash by the difference. */
+/* Cash-paid expenses (#42, synced from v30). Counted expense ids live in the cash record (crIds), for the account.
+ * Only counted entries ever move Cash; entries paid by Cash before they were counted never do.
+ * cdGet() = {entryId: cents taken from Cash now}. cashFix(t, track) counts a new cash-paid entry (track) and
+ * returns how much Cash moved since the last screen update (cashSnap). */
 let cashFlash = null; // {from, to, until} for the Home Cash cell highlight
-function cdGet() { try { const v = JSON.parse(localStorage.getItem(K('cashded')) || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {} } catch (e) { return {} } }
+let cashSnap = null; // Cash in Hand at the last render, so a change shows as before → after
+function cdGet() { return cashDedMap() }
 
-function cdSet(m) { try { localStorage.setItem(K('cashded'), JSON.stringify(m)) } catch (e) {} }
-
-function cdHas(id) { return Object.prototype.hasOwnProperty.call(cdGet(), String(id)) }
+function cdHas(id) { return crIds(crGet()).has(String(id)) }
 
 function cashWant(t) { return t && !t.del && t.type === 'expense' && t.pay === 'Cash' ? Math.round(+t.amt) || 0 : 0 }
 
 function cashFix(t, track) {
-  const m = cdGet(),
-    k = String(t.id),
-    had = Object.prototype.hasOwnProperty.call(m, k);
-  if (!had && !track) return 0;
-  const old = had ? Math.round(+m[k]) || 0 : 0,
-    want = cashWant(t);
-  if (want) m[k] = want;
-  else delete m[k];
-  cdSet(m);
-  if (old === want) return 0;
-  const c0 = bcGet().cash,
-    c1 = c0 - (want - old);
-  bcSet({ cash: c1 });
+  const c0 = cashSnap == null ? cashNow() : cashSnap,
+    k = String(t.id);
+  if (track && cashWant(t)) { const r = crGet(); if (!crIds(r).has(k)) { r.nids.push(k);
+      crSet(r);
+      cashDirty() } }
+  const c1 = cashNow();
+  cashSnap = c1;
+  if (c0 === c1) return 0;
   cashFlash = { from: c0, to: c1, until: Date.now() + 3000 };
   return c1 - c0;
 }
@@ -4401,16 +4510,17 @@ function cashFlashOn() { return !!(cashFlash && cashFlash.until > Date.now()) }
 
 function cashFlashEnd() { if (!cashFlash) return; const w = Math.max(0, cashFlash.until - Date.now()); setTimeout(() => { if (cashFlash && cashFlash.until <= Date.now() + 50) { cashFlash = null; document.querySelectorAll('.bcfl').forEach(e => e.classList.remove('bcfl')); const l = document.getElementById('bcchg'); if (l) l.remove() } }, w) }
 
-function bcRow() { if (!bcOn()) return ''; const c = bcGet().cash,
+function bcRow() { if (!bcOn() || ym !== curKey) return ''; const c = bcGet().cash,
     b = bcLeft() - c,
-    fl = cashFlashOn(); return '<div class="bcrow"><button class="bcb" data-a="bcopen"><span class="lbl">Bank</span> <span class="' + (b < 0 ? 'bad' : '') + '">' + bcMoney(b) + '</span></button><button class="bcb' + (fl ? ' bcfl' : '') + '" data-a="bcopen"><span class="lbl">Cash</span> <span class="' + (c < 0 ? 'bad' : '') + '">' + bcMoney(c) + '</span></button><button class="bcb bcx" data-a="bcopen" aria-label="Move money between bank and cash">⇄</button></div>' + (fl ? '<p class="lbl bcchg" id="bcchg" role="status">Cash changed: ' + bcMoney(cashFlash.from) + ' → ' + bcMoney(cashFlash.to) + '</p>' : '') }
+    fl = cashFlashOn(); return '<div class="bcrow bcd"><button class="bcb bcbank" data-a="bcopen"><span class="lbl">Amount in Bank</span><span class="bcn">' + bcMoney(b) + '</span></button><button class="bcb bccash' + (fl ? ' bcfl' : '') + '" data-a="bcopen"><span class="lbl">Cash in Hand</span><span class="bcn' + (c < 0 ? ' bad' : '') + '">' + bcMoney(c) + '</span></button></div>' +
+    '<button class="bcb bcmv" data-a="bcopen"><span class="mvi" aria-hidden="true">⇄</span> Move money between Bank and Cash</button>' + (fl ? '<p class="lbl bcchg" id="bcchg" role="status">Cash changed: ' + bcMoney(cashFlash.from) + ' → ' + bcMoney(cashFlash.to) + '</p>' : '') }
 
 function bcSheet() {
   if (!bcOpen) return '';
   const v = bcPrev(),
     f = n => (n / 100).toFixed(2);
   return '<div class="shwrap"><div class="shbg" data-a="bcclose"></div><div class="sheet" role="dialog" aria-label="Bank and cash"><h2 style="margin:0">Bank and cash</h2>' +
-    '<div class="two2"><label class="lbl">Bank (auto)<input id="bcbank" type="text" readonly tabindex="-1" aria-readonly="true" value="' + f(v.bank) + '"' + (v.bank < 0 ? ' style="color:var(--bad)"' : '') + '></label><label class="lbl">Cash (RM)<input id="bccash" type="number" inputmode="decimal" min="0" step="any" placeholder="0.00" value="' + f(v.cash) + '"></label></div>' +
+    '<div class="two2"><label class="lbl">Amount in Bank (auto)<input id="bcbank" type="text" readonly tabindex="-1" aria-readonly="true" value="' + f(v.bank) + '"' + (v.bank < 0 ? ' style="color:var(--bad)"' : '') + '></label><label class="lbl">Cash in Hand (RM)<input id="bccash" type="number" inputmode="decimal" min="0" step="any" placeholder="0.00" value="' + f(v.cash) + '"></label></div>' +
     (() => { const cm = cashMonth(); return '<div class="cashbox"><b>Paid by Cash ' + (ym === curKey ? 'this month' : 'in ' + mlabel(ym)) + '</b><span class="lbl">' + (cm.n ? cm.n + ' expense' + (cm.n === 1 ? '' : 's') + ' · −RM ' + fmt(cm.amt / 100) + ' taken from Cash automatically' : 'None yet. Expenses paid by Cash come off Cash automatically.') + '</span></div>' })() +
     '<div class="seg bcseg"><button data-a="bcmode" data-v="wd" aria-pressed="' + (bcMode === 'wd') + '">Withdraw</button><button data-a="bcmode" data-v="dep" aria-pressed="' + (bcMode === 'dep') + '">Deposit</button></div>' +
     '<div class="bact"><input id="bcw" type="number" inputmode="decimal" min="0" step="any" placeholder="Amount (RM)" aria-label="' + (bcMode === 'wd' ? 'Amount to withdraw from bank to cash' : 'Amount to deposit from cash to bank') + '" value="' + esc(bcAmt) + '"><button class="sec" data-a="bcgo">' + (bcMode === 'wd' ? 'Withdraw' : 'Deposit') + '</button></div>' +
@@ -4469,6 +4579,7 @@ function render(keep) {
   if (dbN) { suggest(draft.note || '');
     dbN.scrollTop = dbT;
     vvFit() }
+  cashSnap = cashNow();
 }
 
 /* ===== DEMO SAMPLE DATA ===== */
@@ -4873,11 +4984,11 @@ document.addEventListener('click', e => {
     if (amt === null || !amt) { toast('Enter an amount'); return }
     if (bcMode === 'wd' && amt > Math.max(bank, 0)) { toast('That is more than you have in the bank'); return }
     if (bcMode === 'dep' && amt > c) { toast('That is more cash than you have'); return }
-    const prev = { cash: c };
-    bcSet({ cash: bcMode === 'wd' ? c + amt : c - amt });
+    const dd = bcMode === 'wd' ? amt : -amt;
+    cashAdd(dd);
     bcAmt = '';
     render(true);
-    toast((bcMode === 'wd' ? 'Moved RM ' : 'Deposited RM ') + fmt(amt / 100) + (bcMode === 'wd' ? ' to cash' : ' to bank'), () => { bcSet(prev);
+    toast((bcMode === 'wd' ? 'Moved RM ' : 'Deposited RM ') + fmt(amt / 100) + (bcMode === 'wd' ? ' to cash' : ' to bank'), () => { cashAdd(-dd);
       render(true) });
   } else if (a === 'bctog') { try { localStorage.setItem(K('bcshow'), v) } catch (err) {} render(true) } else if (a === 'hideinst') { try { localStorage.setItem(K('hideinstall'), '1') } catch (err) {} render(true) } else if (a === 'safetog') { try { localStorage.setItem(K('safe'), v) } catch (err) {} render(true) } else if (a === 'theme') { theme = v; try { localStorage.setItem('fin.theme', v) } catch (err) {} applyTheme();
     render(true) } else if (a === 'edit') { const g = tx.find(t => String(t.id) === b.dataset.id); if (!g) return;
@@ -4973,7 +5084,8 @@ document.addEventListener('click', e => {
     render(true) } else if (a === 'fcatmore') { fCatMore = !fCatMore;
     render(true) } else if (a === 'paym') { draft.pay = draft.pay === v ? '' : v;
     render(true) } else if (a === 'profile') { setProfile(v) } else if (a === 'resetdemo') { if (PROFILE === 'personal') return;
-    try { localStorage.removeItem(K('cashded')) } catch (e) {}
+    try { localStorage.removeItem(K('cashded'));
+      localStorage.removeItem(K('cash')) } catch (e) {} cashInit();
     tx = [];
     bills = [];
     budgets = {};
@@ -5083,8 +5195,7 @@ document.addEventListener('click', e => {
     if (!kp.pays) pays = Array.isArray(d.pays) ? d.pays : [];
     if (!kp.cats) applyCats(d.cats || null);
     Object.keys(budgets).forEach(k => { if (typeof budgets[k] === 'number') budgets[k] = { rm: budgets[k] } });
-    if (d.bankcash && typeof d.bankcash === 'object') bcSet(d.bankcash);
-    cdSet(d.cashded && typeof d.cashded === 'object' && !Array.isArray(d.cashded) ? d.cashded : {}); // old backups have none
+    // v30: Cash in Hand belongs to the account; restore never changes it (old per-device bankcash/cashded are ignored)
     if (Array.isArray(d.paymethods)) paySet(d.paymethods.filter(x => typeof x === 'string').map(x => x.trim()).filter(Boolean).slice(0, PM_MAX));
     tx.forEach(t => { t.upd = now });
     pend = null;
@@ -5638,6 +5749,7 @@ function profBar() {
 function ld(n, d) { try { return JSON.parse(localStorage.getItem(K(n)) || d) } catch (e) { return JSON.parse(d) } }
 
 function loadProfile() {
+  cashInit();
   tx = ld('tx', '[]');
   bills = ld('bills', '[]');
   budgets = ld('budgets', '{}');
@@ -5830,10 +5942,11 @@ function payChips() {
 let statsTab = 'overview',
   revShow = false;
 const DEMO_VER = 9;
-const APP_VER = 'v29'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
+const APP_VER = 'v30'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
 /* Changelog (#46): newest first, plain words, 1–5 bullets (most important first). Every release adds
  * its entry at the top; the What's new card reads CHANGELOG[0], so this is the one place to edit. */
 const CHANGELOG = [
+  { ver: 'v30', date: '2026-11-17', act: { label: 'Set cash', go: 'bankcash' }, lines: ['Cash in Hand is saved to your account and syncs across devices', 'Home shows Amount in Bank and Cash in Hand', 'Move money between Bank and Cash with one button', 'Set your cash once after this update'] },
   { ver: 'v29', date: '2026-11-16', card: false, lines: ['Quick add follows renamed or deleted categories', 'Long notes fit in the monthly review', 'Safe to spend easier to read in Classic light', 'Safer restore: damaged backups are checked first'] },
   { ver: 'v28', date: '2026-11-16', lines: ['Save toward a goal moved to the Add screen', 'Category row scrolls with a mouse'] },
   { ver: 'v27', date: '2026-11-13', lines: ['Changelog added in Settings'] },
@@ -5866,7 +5979,7 @@ const CHANGELOG = [
 ];
 /* What's new card (#44): rewritten every release from its user-visible items. lines [] = no card.
  * act.go is limited to WN_GO. Shown once per version (K('wnseen')), personal profile with history only. */
-const WHATS_NEW = { ver: CHANGELOG[0].ver, lines: CHANGELOG[0].card === false ? [] : CHANGELOG[0].lines.slice(0, 5), act: null }; // act: optional {label, go}
+const WHATS_NEW = { ver: CHANGELOG[0].ver, lines: CHANGELOG[0].card === false ? [] : CHANGELOG[0].lines.slice(0, 5), act: CHANGELOG[0].act || null }; // act: optional {label, go}
 const WN_GO = ['appearance', 'bankcash'];
 let wnShown = false;
 function wnNum(v) { return parseInt(String(v || '').replace(/^v/, ''), 10) || 0 }
@@ -6123,7 +6236,7 @@ function catUI() {
 }
 
 /* ===== BACKUP / RESTORE ===== */
-function backupData() { return { app: 'ledger', ver: 1, profile: PROFILE, at: today(), bankcash: bcGet(), cashded: cdGet(), paymethods: payCustom(), tx: tx, bills: bills, budgets: budgets, goals: goals, recur: recur, plans: plans, favs: favs, cats: catsObj(), pays: pays } }
+function backupData() { return { app: 'ledger', ver: 1, profile: PROFILE, at: today(), cash: (() => { const r = crGet(); return { cash: cashNow(), base: crBase(r), ids: Array.from(crIds(r)) } })(), paymethods: payCustom(), tx: tx, bills: bills, budgets: budgets, goals: goals, recur: recur, plans: plans, favs: favs, cats: catsObj(), pays: pays } }
 
 // B13a: check each part of a backup before it can be restored.
 // Bad entries are skipped; a part with the wrong shape keeps this device's current data.
@@ -6292,7 +6405,7 @@ function goalAdd(gid, amt) { const x = goals.find(y => y.id === gid); if (x) { x
     saveB() } }
 
 /* ===== APPS SCRIPT SOURCE (shown to the user to paste) ===== */
-const SCRIPT_SRC = "// Ledger sync (Google Apps Script).\n// Easiest way: in the Ledger app open Sync, tap \"Copy script\", then paste it into a new project at script.google.com.\n// Then Deploy > New deployment > Web app > Who has access: Anyone > Deploy, and paste the Web app URL back into the app.\n// The script creates a Google Sheet called \"Ledger\" in a Drive folder called \"Ledger\": one tab per month, newest first,\n// tabs colored by year, and a Summary tab with each year as a collapsible group.\n\nconst TOKEN = '__TOKEN__';\nconst FOLDER = 'Ledger';\nconst FILE_NAME = '__NAME__';\nconst EMAIL = ''; // leave empty to email your own Google account (bill reminders)\nconst SHEET = 'Entries';\nconst SETTINGS = 'Settings';\nconst MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];\nconst YEAR_COLORS = ['#0B8F7A', '#D98A2B', '#4A7BD0', '#C4547A', '#8A6FD1', '#6B7A2E'];\n\nfunction ss_() {\n  let ss = SpreadsheetApp.getActiveSpreadsheet();\n  if (ss) return ss;\n  const props = PropertiesService.getScriptProperties();\n  const id = props.getProperty('SSID');\n  if (id) { try { return SpreadsheetApp.openById(id); } catch (e) {} }\n  ss = SpreadsheetApp.create(FILE_NAME);\n  props.setProperty('SSID', ss.getId());\n  try { ss.getSheets()[0].setName('Summary'); } catch (e) {}\n  try {\n    const it = DriveApp.getFoldersByName(FOLDER);\n    const f = it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER);\n    DriveApp.getFileById(ss.getId()).moveTo(f);\n  } catch (e) {}\n  return ss;\n}\n\nfunction entries_(ss) {\n  let sh = ss.getSheetByName(SHEET);\n  if (!sh) {\n    sh = ss.insertSheet(SHEET);\n    sh.appendRow(['id', 'date', 'type', 'category', 'amount', 'note', 'deleted', 'updated', 'sv', 'payment', 'goal']);\n    sh.getRange('A:B').setNumberFormat('@');\n    sh.getRange('F:F').setNumberFormat('@');\n    sh.setFrozenRows(1);\n    try { sh.hideSheet(); } catch (e) {}\n  }\n  return sh;\n}\n\n// Bills, budgets, goals, plans, favorites, categories and repeating entries live here as one JSON blob (last write wins).\nfunction cfgSheet_(ss) {\n  let sh = ss.getSheetByName(SETTINGS);\n  if (!sh) {\n    sh = ss.insertSheet(SETTINGS);\n    sh.getRange('A1:A2').setValues([['updated'], ['data']]);\n    sh.getRange('B1:B2').setNumberFormat('@');\n    try { sh.hideSheet(); } catch (e) {}\n  }\n  return sh;\n}\n\nfunction owner_() {\n  try { return Session.getEffectiveUser().getEmail(); } catch (e) { return ''; }\n}\n\nfunction fmtDate_(v, tz) {\n  return v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : String(v);\n}\nfunction mk_(r) { return String(r[1]).slice(0, 7); }\n\nfunction tot_(rows) {\n  let inc = 0, sp = 0, sv = 0;\n  rows.forEach(r => {\n    const a = Number(r[4]);\n    if (r[2] === 'income') inc += a; else if (Number(r[10])) sv += a; else sp += a;\n  });\n  return [inc, sp, sv, inc - sp - sv, rows.length];\n}\n\nfunction monthSheet_(ss, m, rows) {\n  let sh = ss.getSheetByName(m);\n  if (!sh) sh = ss.insertSheet(m);\n  sh.clear();\n  const y = Number(m.slice(0, 4)), mo = Number(m.slice(5));\n  rows = rows.slice().sort((a, b) => String(a[1]).localeCompare(String(b[1])) || Number(a[0]) - Number(b[0]));\n  const t = tot_(rows);\n  const body = rows.map(r => {\n    const a = Number(r[4]), inc = r[2] === 'income';\n    return [r[1], inc ? 'Income' : (Number(r[10]) ? 'Savings' : 'Expense'), r[3], r[5], inc ? a : -a, r[9] || ''];\n  });\n  sh.getRange(1, 1).setValue(MON[mo - 1] + ' ' + y).setFontWeight('bold').setFontSize(14);\n  sh.getRange(2, 1, 2, 5).setValues([['Income', 'Spent', 'Saved to goals', 'Left', 'Entries'], t]);\n  sh.getRange(2, 1, 1, 5).setFontWeight('bold');\n  sh.getRange(3, 1, 1, 4).setNumberFormat('#,##0.00');\n  sh.getRange(5, 1, 1, 6).setValues([['Date', 'Type', 'Category', 'Note', 'Amount (RM)', 'Paid by']]).setFontWeight('bold').setBackground('#E8F3F0');\n  if (body.length) {\n    sh.getRange(6, 1, body.length, 1).setNumberFormat('@');\n    sh.getRange(6, 1, body.length, 6).setValues(body);\n    sh.getRange(6, 5, body.length, 1).setNumberFormat('#,##0.00;[Red]-#,##0.00');\n  }\n  try { sh.setFrozenRows(5); sh.setTabColor(YEAR_COLORS[y % YEAR_COLORS.length]); sh.setColumnWidth(1, 95); sh.setColumnWidth(4, 220); } catch (e) {}\n}\n\nfunction order_(ss) {\n  const names = ss.getSheets().map(s => s.getName()).filter(n => /^\\d{4}-\\d{2}$/.test(n)).sort().reverse();\n  names.forEach((n, i) => {\n    try { ss.setActiveSheet(ss.getSheetByName(n)); ss.moveActiveSheet(i + 2); } catch (e) {}\n  });\n}\n\nfunction summary_(ss, by) {\n  let sh = ss.getSheetByName('Summary');\n  if (!sh) sh = ss.insertSheet('Summary', 0);\n  try { for (let i = 0; i < 2; i++) sh.getRange(1, 1, sh.getMaxRows(), 1).shiftRowGroupDepth(-1); } catch (e) {}\n  sh.clear();\n  const months = Object.keys(by).sort().reverse(), years = {};\n  months.forEach(m => { (years[m.slice(0, 4)] = years[m.slice(0, 4)] || []).push(m); });\n  const yrs = Object.keys(years).sort().reverse();\n  const curYear = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy');\n  const out = [['Year / Month', 'Income', 'Spent', 'Saved to goals', 'Left', 'Entries']];\n  const yearRows = [], monthRows = [], groups = [];\n  yrs.forEach(y => {\n    const yt = [0, 0, 0, 0, 0], list = years[y].map(m => ({ m: m, t: tot_(by[m]) }));\n    list.forEach(x => x.t.forEach((v, i) => { yt[i] += v; }));\n    out.push([y].concat(yt));\n    yearRows.push(out.length);\n    const start = out.length + 1;\n    list.forEach(x => { out.push([MON[Number(x.m.slice(5)) - 1]].concat(x.t)); monthRows.push({ row: out.length, m: x.m }); });\n    if (list.length) groups.push({ start: start, count: list.length, open: y === curYear });\n  });\n  sh.getRange(1, 1, out.length, 6).setValues(out);\n  sh.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#E8F3F0');\n  yearRows.forEach(r => sh.getRange(r, 1, 1, 6).setFontWeight('bold').setBackground('#F3F4F1'));\n  sh.getRange(2, 2, out.length, 4).setNumberFormat('#,##0.00');\n  monthRows.forEach(x => {\n    try { sh.getRange(x.row, 1).setFormula('=HYPERLINK(\"#gid=' + ss.getSheetByName(x.m).getSheetId() + '\",\"' + out[x.row - 1][0] + '\")'); } catch (e) {}\n  });\n  try { sh.setFrozenRows(1); sh.setColumnWidth(1, 150); } catch (e) {}\n  groups.forEach(g => {\n    try {\n      sh.getRange(g.start, 1, g.count, 1).shiftRowGroupDepth(1);\n      if (!g.open) sh.getRowGroup(g.start, 1).collapse();\n    } catch (e) {}\n  });\n}\n\nfunction rebuild_(ss, data, months) {\n  const by = {};\n  data.forEach(r => { if (!Number(r[6]) && /^\\d{4}-\\d{2}/.test(String(r[1]))) (by[mk_(r)] = by[mk_(r)] || []).push(r); });\n  const todo = {};\n  months.forEach(m => { todo[m] = 1; });\n  Object.keys(by).forEach(m => { if (!ss.getSheetByName(m)) todo[m] = 1; });\n  Object.keys(todo).forEach(m => monthSheet_(ss, m, by[m] || []));\n  order_(ss);\n  summary_(ss, by);\n}\n\nfunction doGet() {\n  return ContentService.createTextOutput('Ledger sync is running');\n}\n\nfunction doPost(e) {\n  const out = o => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);\n  let req;\n  try { req = JSON.parse(e.postData.contents); } catch (err) { return out({ ok: false, error: 'Bad request' }); }\n  if (req.token !== TOKEN) return out({ ok: false, error: 'Wrong token' });\n  const lock = LockService.getScriptLock();\n  lock.waitLock(20000);\n  try {\n    const ss = ss_(), sh = entries_(ss), now = Date.now(), tz = Session.getScriptTimeZone();\n    if (req.peek) {\n      // read-only check used when an app connects: lets it decide whether to pull, push or ask first\n      const lr = sh.getLastRow();\n      const flags = lr > 1 ? sh.getRange(2, 7, lr - 1, 1).getValues() : [];\n      const pv = cfgSheet_(ss).getRange('B1').getValue();\n      return out({ ok: true, peek: true, sid: ss.getId(), name: ss.getName(), owner: owner_(), entries: flags.filter(f => !Number(f[0])).length, hasCfg: (Number(pv) || 0) > 0 });\n    }\n    const last = sh.getLastRow();\n    const data = last > 1 ? sh.getRange(2, 1, last - 1, 11).getValues() : [];\n    data.forEach(r => { r[0] = String(r[0]); r[1] = fmtDate_(r[1], tz); });\n    const idx = {}, touched = {};\n    data.forEach((r, i) => { idx[r[0]] = i; });\n    (req.rows || []).forEach(t => {\n      const row = [String(t.id), t.date, t.type, t.cat, t.amt / 100, t.note || '', t.del ? 1 : 0, t.upd, now, t.pay || '', t.goal || 0];\n      const i = idx[String(t.id)];\n      if (i === undefined) { data.push(row); idx[String(t.id)] = data.length - 1; touched[mk_(row)] = 1; }\n      else if (t.upd >= Number(data[i][7])) { touched[mk_(data[i])] = 1; data[i] = row; touched[mk_(row)] = 1; }\n    });\n    if (data.length) sh.getRange(2, 1, data.length, 11).setValues(data);\n    const months = Object.keys(touched).filter(m => /^\\d{4}-\\d{2}$/.test(m));\n    if (months.length || !ss.getSheetByName('Summary')) rebuild_(ss, data, months);\n    const since = Number(req.since) || 0;\n    const rows = data.filter(r => Number(r[8]) >= since).map(r => ({\n      id: Number(r[0]), date: r[1], type: r[2], cat: r[3],\n      amt: Math.round(Number(r[4]) * 100), note: String(r[5]),\n      del: Number(r[6]) ? 1 : 0, upd: Number(r[7]), pay: String(r[9] || ''), goal: Number(r[10]) || 0\n    }));\n\n    const cs = cfgSheet_(ss), cv = cs.getRange('B1:B2').getValues(), cu = Number(cv[0][0]) || 0;\n    let cfg = null, cfgVer = null;\n    // A device may only overwrite the settings if it has seen the latest version (base). A blank or out-of-date device can never wipe them.\n    const accept = req.cfg && (cu === 0 || (req.cfg.base === undefined ? req.cfg.upd > cu : Number(req.cfg.base) === cu));\n    if (accept) {\n      const json = JSON.stringify(req.cfg.data || {});\n      if (json.length > 45000) return out({ ok: false, error: 'Settings too large' });\n      cfgVer = Math.max(Date.now(), cu + 1);\n      cs.getRange('B1:B2').setValues([[String(cfgVer)], [json]]);\n    } else if (cu > 0 && (req.cfg || cu > (Number(req.cfgKnown) || 0))) {\n      cfg = { upd: cu, data: JSON.parse(cv[1][0] || '{}') };\n    }\n    return out({ ok: true, rows: rows, cursor: now, cfg: cfg, cfgVer: cfgVer, sid: ss.getId(), url: ss.getUrl(), name: ss.getName(), owner: owner_() });\n  } finally {\n    lock.releaseLock();\n  }\n}\n\n// Daily email for bills that are overdue or due within 3 days. Add a time-driven trigger for this function.\nfunction sendBillReminders() {\n  const raw = cfgSheet_(ss_()).getRange('B2').getValue();\n  if (!raw || raw === 'data') return;\n  const bills = (JSON.parse(raw).bills) || [];\n  const tz = Session.getScriptTimeZone(), now = new Date();\n  const k = Utilities.formatDate(now, tz, 'yyyy-MM');\n  const td = Number(Utilities.formatDate(now, tz, 'd'));\n  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();\n  const lines = [];\n  bills.forEach(b => {\n    if (b.paid && b.paid[k]) return;\n    if ((b.from && k < b.from) || (b.to && k > b.to)) return;\n    const d = Math.min(b.day, dim) - td;\n    if (d > 3) return;\n    lines.push('- ' + b.name + ': RM ' + (b.amt / 100).toFixed(2) + (d < 0 ? ' (overdue)' : d === 0 ? ' (due today)' : ' (due in ' + d + ' days)'));\n  });\n  if (!lines.length) return;\n  MailApp.sendEmail(EMAIL || Session.getEffectiveUser().getEmail(), 'Bills due soon', lines.join('\\n'));\n}\n";
+const SCRIPT_SRC = "// Ledger sync (Google Apps Script).\n// Easiest way: in the Ledger app open Sync, tap \"Copy script\", then paste it into a new project at script.google.com.\n// Then Deploy > New deployment > Web app > Who has access: Anyone > Deploy, and paste the Web app URL back into the app.\n// The script creates a Google Sheet called \"Ledger\" in a Drive folder called \"Ledger\": one tab per month, newest first,\n// tabs colored by year, and a Summary tab with each year as a collapsible group.\n// Updating an existing script: paste the new code, then Deploy > Manage deployments > Edit (pencil) > Version: New version > Deploy.\n// That keeps the same Web app URL. Do not use \"New deployment\" for an update: it makes a new URL.\n\nconst TOKEN = '__TOKEN__';\nconst FOLDER = 'Ledger';\nconst FILE_NAME = '__NAME__';\nconst EMAIL = ''; // leave empty to email your own Google account (bill reminders)\nconst SHEET = 'Entries';\nconst SETTINGS = 'Settings';\nconst MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];\nconst YEAR_COLORS = ['#0B8F7A', '#D98A2B', '#4A7BD0', '#C4547A', '#8A6FD1', '#6B7A2E'];\n\nfunction ss_() {\n  let ss = SpreadsheetApp.getActiveSpreadsheet();\n  if (ss) return ss;\n  const props = PropertiesService.getScriptProperties();\n  const id = props.getProperty('SSID');\n  if (id) { try { return SpreadsheetApp.openById(id); } catch (e) {} }\n  ss = SpreadsheetApp.create(FILE_NAME);\n  props.setProperty('SSID', ss.getId());\n  try { ss.getSheets()[0].setName('Summary'); } catch (e) {}\n  try {\n    const it = DriveApp.getFoldersByName(FOLDER);\n    const f = it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER);\n    DriveApp.getFileById(ss.getId()).moveTo(f);\n  } catch (e) {}\n  return ss;\n}\n\nfunction entries_(ss) {\n  let sh = ss.getSheetByName(SHEET);\n  if (!sh) {\n    sh = ss.insertSheet(SHEET);\n    sh.appendRow(['id', 'date', 'type', 'category', 'amount', 'note', 'deleted', 'updated', 'sv', 'payment', 'goal']);\n    sh.getRange('A:B').setNumberFormat('@');\n    sh.getRange('F:F').setNumberFormat('@');\n    sh.setFrozenRows(1);\n    try { sh.hideSheet(); } catch (e) {}\n  }\n  return sh;\n}\n\n// Bills, budgets, goals, plans, favorites, categories and repeating entries live here as one JSON blob (last write wins).\nfunction cfgSheet_(ss) {\n  let sh = ss.getSheetByName(SETTINGS);\n  if (!sh) {\n    sh = ss.insertSheet(SETTINGS);\n    sh.getRange('A1:A2').setValues([['updated'], ['data']]);\n    sh.getRange('B1:B2').setNumberFormat('@');\n    try { sh.hideSheet(); } catch (e) {}\n  }\n  return sh;\n}\n\n// Cash in Hand (v30). Rows 3-6 of the Settings tab: cash = starting amount in cents, cashver = version,\n// cashids = ids of the cash-paid expenses that count (JSON, split over B, C, D... when long), cashops = recent change ids (no double apply).\n// The app works out Cash in Hand = cash - the counted expenses that are still paid by Cash.\nconst CASH_ROWS = [['cash'], ['cashver'], ['cashids'], ['cashops']];\nconst CASH_CHUNK = 40000;\n\nfunction cashRead_(cs) {\n  if (String(cs.getRange('A3').getValue()) !== 'cash') {\n    cs.getRange('A3:A6').setValues(CASH_ROWS);\n    cs.getRange('B3:Z6').setNumberFormat('@');\n  }\n  const lc = Math.max(2, cs.getLastColumn());\n  const v = cs.getRange(3, 2, 4, lc - 1).getValues();\n  let ids = [], ops = [];\n  try { ids = JSON.parse(v[2].map(String).join('') || '[]'); } catch (e) { ids = []; }\n  try { ops = JSON.parse(String(v[3][0] || '[]')); } catch (e) { ops = []; }\n  return { base: Math.round(Number(v[0][0]) || 0), ver: Number(v[1][0]) || 0, ids: Array.isArray(ids) ? ids.map(String) : [], ops: Array.isArray(ops) ? ops.map(String) : [], width: lc - 1 };\n}\n\nfunction cashWrite_(cs, c) {\n  const j = JSON.stringify(c.ids), parts = [];\n  for (let i = 0; i < j.length; i += CASH_CHUNK) parts.push(j.slice(i, i + CASH_CHUNK));\n  if (!parts.length) parts.push('[]');\n  const w = Math.max(parts.length, c.width, 1);\n  const rows = [[String(c.base)], [String(c.ver)], parts, [JSON.stringify(c.ops.slice(-500))]].map(r => { const o = r.slice(); while (o.length < w) o.push(''); return o; });\n  cs.getRange(3, 2, 4, w).setNumberFormat('@').setValues(rows);\n}\n\nfunction cash_(cs, req) {\n  const c = cashRead_(cs), seen = {}, ack = {}, have = {};\n  let dirty = false;\n  c.ops.forEach(id => { seen[id] = 1; });\n  c.ids.forEach(id => { have[id] = 1; });\n  (Array.isArray(req.ops) ? req.ops : []).slice(0, 300).forEach(op => {\n    const id = String(op && op.id || '');\n    if (!id) return;\n    if (seen[id]) { ack[id] = 'ok'; return; }\n    seen[id] = 1; c.ops.push(id); dirty = true;\n    if (op.set !== undefined && op.set !== null) {\n      const v = Math.round(Number(op.set));\n      if (!isFinite(v) || Math.abs(v) > 1e11) { ack[id] = 'bad'; return; }\n      if (Number(op.seen) === c.ver) { c.base = v; c.ver++; ack[id] = 'ok'; } else ack[id] = 'stale';\n    } else {\n      const d = Math.round(Number(op.d));\n      if (!isFinite(d) || Math.abs(d) > 1e11) { ack[id] = 'bad'; return; }\n      c.base += d; c.ver++; ack[id] = 'ok';\n    }\n  });\n  (Array.isArray(req.ids) ? req.ids : []).slice(0, 5000).forEach(x => { const id = String(x); if (/^\\d{1,20}$/.test(id) && !have[id]) { have[id] = 1; c.ids.push(id); dirty = true; } });\n  if (dirty) cashWrite_(cs, c);\n  return { base: c.base, ver: c.ver, ids: c.ids, ack: ack };\n}\n\nfunction owner_() {\n  try { return Session.getEffectiveUser().getEmail(); } catch (e) { return ''; }\n}\n\nfunction fmtDate_(v, tz) {\n  return v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : String(v);\n}\nfunction mk_(r) { return String(r[1]).slice(0, 7); }\n\nfunction tot_(rows) {\n  let inc = 0, sp = 0, sv = 0;\n  rows.forEach(r => {\n    const a = Number(r[4]);\n    if (r[2] === 'income') inc += a; else if (Number(r[10])) sv += a; else sp += a;\n  });\n  return [inc, sp, sv, inc - sp - sv, rows.length];\n}\n\nfunction monthSheet_(ss, m, rows) {\n  let sh = ss.getSheetByName(m);\n  if (!sh) sh = ss.insertSheet(m);\n  sh.clear();\n  const y = Number(m.slice(0, 4)), mo = Number(m.slice(5));\n  rows = rows.slice().sort((a, b) => String(a[1]).localeCompare(String(b[1])) || Number(a[0]) - Number(b[0]));\n  const t = tot_(rows);\n  const body = rows.map(r => {\n    const a = Number(r[4]), inc = r[2] === 'income';\n    return [r[1], inc ? 'Income' : (Number(r[10]) ? 'Savings' : 'Expense'), r[3], r[5], inc ? a : -a, r[9] || ''];\n  });\n  sh.getRange(1, 1).setValue(MON[mo - 1] + ' ' + y).setFontWeight('bold').setFontSize(14);\n  sh.getRange(2, 1, 2, 5).setValues([['Income', 'Spent', 'Saved to goals', 'Left', 'Entries'], t]);\n  sh.getRange(2, 1, 1, 5).setFontWeight('bold');\n  sh.getRange(3, 1, 1, 4).setNumberFormat('#,##0.00');\n  sh.getRange(5, 1, 1, 6).setValues([['Date', 'Type', 'Category', 'Note', 'Amount (RM)', 'Paid by']]).setFontWeight('bold').setBackground('#E8F3F0');\n  if (body.length) {\n    sh.getRange(6, 1, body.length, 1).setNumberFormat('@');\n    sh.getRange(6, 1, body.length, 6).setValues(body);\n    sh.getRange(6, 5, body.length, 1).setNumberFormat('#,##0.00;[Red]-#,##0.00');\n  }\n  try { sh.setFrozenRows(5); sh.setTabColor(YEAR_COLORS[y % YEAR_COLORS.length]); sh.setColumnWidth(1, 95); sh.setColumnWidth(4, 220); } catch (e) {}\n}\n\nfunction order_(ss) {\n  const names = ss.getSheets().map(s => s.getName()).filter(n => /^\\d{4}-\\d{2}$/.test(n)).sort().reverse();\n  names.forEach((n, i) => {\n    try { ss.setActiveSheet(ss.getSheetByName(n)); ss.moveActiveSheet(i + 2); } catch (e) {}\n  });\n}\n\nfunction summary_(ss, by) {\n  let sh = ss.getSheetByName('Summary');\n  if (!sh) sh = ss.insertSheet('Summary', 0);\n  try { for (let i = 0; i < 2; i++) sh.getRange(1, 1, sh.getMaxRows(), 1).shiftRowGroupDepth(-1); } catch (e) {}\n  sh.clear();\n  const months = Object.keys(by).sort().reverse(), years = {};\n  months.forEach(m => { (years[m.slice(0, 4)] = years[m.slice(0, 4)] || []).push(m); });\n  const yrs = Object.keys(years).sort().reverse();\n  const curYear = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy');\n  const out = [['Year / Month', 'Income', 'Spent', 'Saved to goals', 'Left', 'Entries']];\n  const yearRows = [], monthRows = [], groups = [];\n  yrs.forEach(y => {\n    const yt = [0, 0, 0, 0, 0], list = years[y].map(m => ({ m: m, t: tot_(by[m]) }));\n    list.forEach(x => x.t.forEach((v, i) => { yt[i] += v; }));\n    out.push([y].concat(yt));\n    yearRows.push(out.length);\n    const start = out.length + 1;\n    list.forEach(x => { out.push([MON[Number(x.m.slice(5)) - 1]].concat(x.t)); monthRows.push({ row: out.length, m: x.m }); });\n    if (list.length) groups.push({ start: start, count: list.length, open: y === curYear });\n  });\n  sh.getRange(1, 1, out.length, 6).setValues(out);\n  sh.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#E8F3F0');\n  yearRows.forEach(r => sh.getRange(r, 1, 1, 6).setFontWeight('bold').setBackground('#F3F4F1'));\n  sh.getRange(2, 2, out.length, 4).setNumberFormat('#,##0.00');\n  monthRows.forEach(x => {\n    try { sh.getRange(x.row, 1).setFormula('=HYPERLINK(\"#gid=' + ss.getSheetByName(x.m).getSheetId() + '\",\"' + out[x.row - 1][0] + '\")'); } catch (e) {}\n  });\n  try { sh.setFrozenRows(1); sh.setColumnWidth(1, 150); } catch (e) {}\n  groups.forEach(g => {\n    try {\n      sh.getRange(g.start, 1, g.count, 1).shiftRowGroupDepth(1);\n      if (!g.open) sh.getRowGroup(g.start, 1).collapse();\n    } catch (e) {}\n  });\n}\n\nfunction rebuild_(ss, data, months) {\n  const by = {};\n  data.forEach(r => { if (!Number(r[6]) && /^\\d{4}-\\d{2}/.test(String(r[1]))) (by[mk_(r)] = by[mk_(r)] || []).push(r); });\n  const todo = {};\n  months.forEach(m => { todo[m] = 1; });\n  Object.keys(by).forEach(m => { if (!ss.getSheetByName(m)) todo[m] = 1; });\n  Object.keys(todo).forEach(m => monthSheet_(ss, m, by[m] || []));\n  order_(ss);\n  summary_(ss, by);\n}\n\nfunction doGet() {\n  return ContentService.createTextOutput('Ledger sync is running');\n}\n\nfunction doPost(e) {\n  const out = o => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);\n  let req;\n  try { req = JSON.parse(e.postData.contents); } catch (err) { return out({ ok: false, error: 'Bad request' }); }\n  if (req.token !== TOKEN) return out({ ok: false, error: 'Wrong token' });\n  const lock = LockService.getScriptLock();\n  lock.waitLock(20000);\n  try {\n    const ss = ss_(), sh = entries_(ss), now = Date.now(), tz = Session.getScriptTimeZone();\n    if (req.peek) {\n      // read-only check used when an app connects: lets it decide whether to pull, push or ask first\n      const lr = sh.getLastRow();\n      const flags = lr > 1 ? sh.getRange(2, 7, lr - 1, 1).getValues() : [];\n      const pv = cfgSheet_(ss).getRange('B1').getValue();\n      return out({ ok: true, peek: true, sid: ss.getId(), name: ss.getName(), owner: owner_(), entries: flags.filter(f => !Number(f[0])).length, hasCfg: (Number(pv) || 0) > 0 });\n    }\n    const last = sh.getLastRow();\n    const data = last > 1 ? sh.getRange(2, 1, last - 1, 11).getValues() : [];\n    data.forEach(r => { r[0] = String(r[0]); r[1] = fmtDate_(r[1], tz); });\n    const idx = {}, touched = {};\n    data.forEach((r, i) => { idx[r[0]] = i; });\n    (req.rows || []).forEach(t => {\n      const row = [String(t.id), t.date, t.type, t.cat, t.amt / 100, t.note || '', t.del ? 1 : 0, t.upd, now, t.pay || '', t.goal || 0];\n      const i = idx[String(t.id)];\n      if (i === undefined) { data.push(row); idx[String(t.id)] = data.length - 1; touched[mk_(row)] = 1; }\n      else if (t.upd >= Number(data[i][7])) { touched[mk_(data[i])] = 1; data[i] = row; touched[mk_(row)] = 1; }\n    });\n    if (data.length) sh.getRange(2, 1, data.length, 11).setValues(data);\n    const months = Object.keys(touched).filter(m => /^\\d{4}-\\d{2}$/.test(m));\n    if (months.length || !ss.getSheetByName('Summary')) rebuild_(ss, data, months);\n    const since = Number(req.since) || 0;\n    const rows = data.filter(r => Number(r[8]) >= since).map(r => ({\n      id: Number(r[0]), date: r[1], type: r[2], cat: r[3],\n      amt: Math.round(Number(r[4]) * 100), note: String(r[5]),\n      del: Number(r[6]) ? 1 : 0, upd: Number(r[7]), pay: String(r[9] || ''), goal: Number(r[10]) || 0\n    }));\n\n    const cs = cfgSheet_(ss), cv = cs.getRange('B1:B2').getValues(), cu = Number(cv[0][0]) || 0;\n    let cfg = null, cfgVer = null;\n    // A device may only overwrite the settings if it has seen the latest version (base). A blank or out-of-date device can never wipe them.\n    const accept = req.cfg && (cu === 0 || (req.cfg.base === undefined ? req.cfg.upd > cu : Number(req.cfg.base) === cu));\n    if (accept) {\n      const json = JSON.stringify(req.cfg.data || {});\n      if (json.length > 45000) return out({ ok: false, error: 'Settings too large' });\n      cfgVer = Math.max(Date.now(), cu + 1);\n      cs.getRange('B1:B2').setValues([[String(cfgVer)], [json]]);\n    } else if (cu > 0 && (req.cfg || cu > (Number(req.cfgKnown) || 0))) {\n      cfg = { upd: cu, data: JSON.parse(cv[1][0] || '{}') };\n    }\n    // Cash in Hand: only touched when the app sends it (v30 or newer); older apps never change it.\n    const cash = req.cash ? cash_(cs, req.cash) : null;\n    return out({ ok: true, rows: rows, cursor: now, cfg: cfg, cfgVer: cfgVer, cash: cash, sid: ss.getId(), url: ss.getUrl(), name: ss.getName(), owner: owner_() });\n  } finally {\n    lock.releaseLock();\n  }\n}\n\n// Daily email for bills that are overdue or due within 3 days. Add a time-driven trigger for this function.\nfunction sendBillReminders() {\n  const raw = cfgSheet_(ss_()).getRange('B2').getValue();\n  if (!raw || raw === 'data') return;\n  const bills = (JSON.parse(raw).bills) || [];\n  const tz = Session.getScriptTimeZone(), now = new Date();\n  const k = Utilities.formatDate(now, tz, 'yyyy-MM');\n  const td = Number(Utilities.formatDate(now, tz, 'd'));\n  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();\n  const lines = [];\n  bills.forEach(b => {\n    if (b.paid && b.paid[k]) return;\n    if ((b.from && k < b.from) || (b.to && k > b.to)) return;\n    const d = Math.min(b.day, dim) - td;\n    if (d > 3) return;\n    lines.push('- ' + b.name + ': RM ' + (b.amt / 100).toFixed(2) + (d < 0 ? ' (overdue)' : d === 0 ? ' (due today)' : ' (due in ' + d + ' days)'));\n  });\n  if (!lines.length) return;\n  MailApp.sendEmail(EMAIL || Session.getEffectiveUser().getEmail(), 'Bills due soon', lines.join('\\n'));\n}\n";
 // Minimal QR encoder: byte mode, ECC level M, auto version 1-40, auto mask. Returns {size, get(x,y)} . Based on the public QR spec (ISO/IEC 18004).
 
 /* ===== QR CODE & SCANNER ===== */
@@ -6582,11 +6695,13 @@ function syncBar() { return syncTop() }
 
 function syncUI() {
   if (PROFILE !== 'personal') return '';
-  return '<h2>Google Sheets sync</h2><button class="sec" data-a="gosync">' + (S.url ? 'Sync settings' : 'Log in') + '</button><p class="lbl" id="syncmsg" style="margin:6px 0 0">' + esc(S.url ? syncLabel() : 'Not set up') + '</p>';
+  return '<h2>Google Sheets sync</h2><button class="sec" data-a="gosync">' + (S.url ? 'Sync settings' : 'Log in') + '</button><p class="lbl" id="syncmsg" style="margin:6px 0 0">' + esc(S.url ? syncLabel() : 'Not set up') + '</p>' + cashOldNote();
 }
 
+function cashOldNote() { return PROFILE === 'personal' && S.url && S.cashOld ? '<p class="lbl cashold">Update your script to sync Cash in Hand: copy the script again, paste it, then Deploy › Manage deployments › Edit › New version.</p>' : '' }
+
 function syncPage() {
-  let h = '<h1 class="ttl">' + (PROFILE === 'personal' && !S.url ? 'Log in' : 'Google Sheets sync') + '</h1>';
+  let h = '<h1 class="ttl">' + (PROFILE === 'personal' && !S.url ? 'Log in' : 'Google Sheets sync') + '</h1>' + cashOldNote();
   if (PROFILE !== 'personal') return h + '<p class="lbl">Sync is only for the Personal profile.</p>';
   if (!S.url && pendConn) {
     h += '<div class="stepc"><b>This device already has data</b><p class="lbl" style="margin:4px 0 8px">This device has ' + pendConn.localN + ' entries. The Google Sheet “' + esc(pendConn.pk.name || 'Ledger') + '” already has ' + pendConn.pk.entries + '. What should happen?</p><button class="pri" data-a="connreplace">Use the Sheet’s data (replace this device)</button><button class="sec" style="margin-top:8px" data-a="connmerge">Merge entries (settings come from the Sheet)</button><button class="sec" style="margin-top:8px" data-a="conncancel">Cancel</button><p class="lbl" style="margin:8px 0 0">Unsure? Cancel, download a backup in Stats, then come back.</p></div>';
@@ -6636,6 +6751,8 @@ function eraseAll() { tx.forEach(t => { if (!t.del) { t.del = 1;
   favs = [];
   pays = [];
   clearLocalExtras();
+  if (PROFILE === 'personal') bcSet({ cash: 0 }); // Clear all data also sets Cash in Hand to 0 for the account
+  else { try { localStorage.removeItem(K('cash')) } catch (e) {} cashInit() }
   saveB();
   save() }
 const CLR_PHRASE = "I'm aware that I'm deleting my data";
@@ -6699,6 +6816,8 @@ function clearLocalExtras() { try { localStorage.removeItem(K('bankcash'));
 
 function wipeAll() {
   clearLocalExtras();
+  try { localStorage.removeItem(K('cash')) } catch (e) {} // log out: Cash stays in the Sheet, this device forgets it
+  cashInit();
   clearData();
   S = {};
   saveS();
@@ -7022,8 +7141,9 @@ async function sync() {
   const start = Date.now();
   try {
     const cu = cfgUpd,
-      sendCfg = cu > (S.cfgKnown || 0);
-    const r = await fetch(S.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: S.token, since: S.cursor || 0, rows: tx.filter(t => t.upd >= (S.pushed || 0)), cfg: sendCfg ? { upd: cu, base: S.cfgKnown || 0, data: cfgData() } : null, cfgKnown: S.cfgKnown || 0 }) });
+      sendCfg = cu > (S.cfgKnown || 0),
+      cq = cashReq();
+    const r = await fetch(S.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: S.token, since: S.cursor || 0, rows: tx.filter(t => t.upd >= (S.pushed || 0)), cfg: sendCfg ? { upd: cu, base: S.cfgKnown || 0, data: cfgData() } : null, cfgKnown: S.cfgKnown || 0, cash: cq }) });
     const j = await r.json();
     if (!j.ok) { setStatus(j.error === 'Wrong token' ? 'Wrong token. Check your password in Sync settings.' : (j.error || 'Sync failed')); return }
     if (S.sid && j.sid && j.sid !== S.sid) { setStatus('This script now points to a different Google Sheet. Log out and log in again.'); return }
@@ -7043,6 +7163,9 @@ async function sync() {
       S.cfgKnown = cfgUpd; if (sendCfg) toast('Settings changed on another device were kept') } else if (sendCfg) { const ver = j.cfgVer || cu;
       S.cfgKnown = ver; if (cfgUpd === cu) { cfgUpd = ver;
         persistCfg() } }
+    if (j.cash && typeof j.cash === 'object') cashMerge(j.cash, cq, j.sid || S.sid);
+    else S.cashOld = true; // script older than v30: Cash changes wait on this device
+    cashSnap = cashNow();
     persist();
     S.cursor = j.cursor;
     S.pushed = start;
@@ -7068,6 +7191,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) { co
 window.addEventListener('online', syncSoon);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 try { applyCats(JSON.parse(localStorage.getItem(K('cats')) || 'null')) } catch (e) {}
+cashInit();
 ensureDemo();
 runRecur();
 render();
