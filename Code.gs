@@ -3,6 +3,8 @@
 // Then Deploy > New deployment > Web app > Who has access: Anyone > Deploy, and paste the Web app URL back into the app.
 // The script creates a Google Sheet called "Ledger" in a Drive folder called "Ledger": one tab per month, newest first,
 // tabs colored by year, and a Summary tab with each year as a collapsible group.
+// Updating an existing script: paste the new code, then Deploy > Manage deployments > Edit (pencil) > Version: New version > Deploy.
+// That keeps the same Web app URL. Do not use "New deployment" for an update: it makes a new URL.
 
 const TOKEN = '__TOKEN__';
 const FOLDER = 'Ledger';
@@ -53,6 +55,59 @@ function cfgSheet_(ss) {
     try { sh.hideSheet(); } catch (e) {}
   }
   return sh;
+}
+
+// Cash in Hand (v30). Rows 3-6 of the Settings tab: cash = starting amount in cents, cashver = version,
+// cashids = ids of the cash-paid expenses that count (JSON, split over B, C, D... when long), cashops = recent change ids (no double apply).
+// The app works out Cash in Hand = cash - the counted expenses that are still paid by Cash.
+const CASH_ROWS = [['cash'], ['cashver'], ['cashids'], ['cashops']];
+const CASH_CHUNK = 40000;
+
+function cashRead_(cs) {
+  if (String(cs.getRange('A3').getValue()) !== 'cash') {
+    cs.getRange('A3:A6').setValues(CASH_ROWS);
+    cs.getRange('B3:Z6').setNumberFormat('@');
+  }
+  const lc = Math.max(2, cs.getLastColumn());
+  const v = cs.getRange(3, 2, 4, lc - 1).getValues();
+  let ids = [], ops = [];
+  try { ids = JSON.parse(v[2].map(String).join('') || '[]'); } catch (e) { ids = []; }
+  try { ops = JSON.parse(String(v[3][0] || '[]')); } catch (e) { ops = []; }
+  return { base: Math.round(Number(v[0][0]) || 0), ver: Number(v[1][0]) || 0, ids: Array.isArray(ids) ? ids.map(String) : [], ops: Array.isArray(ops) ? ops.map(String) : [], width: lc - 1 };
+}
+
+function cashWrite_(cs, c) {
+  const j = JSON.stringify(c.ids), parts = [];
+  for (let i = 0; i < j.length; i += CASH_CHUNK) parts.push(j.slice(i, i + CASH_CHUNK));
+  if (!parts.length) parts.push('[]');
+  const w = Math.max(parts.length, c.width, 1);
+  const rows = [[String(c.base)], [String(c.ver)], parts, [JSON.stringify(c.ops.slice(-500))]].map(r => { const o = r.slice(); while (o.length < w) o.push(''); return o; });
+  cs.getRange(3, 2, 4, w).setNumberFormat('@').setValues(rows);
+}
+
+function cash_(cs, req) {
+  const c = cashRead_(cs), seen = {}, ack = {}, have = {};
+  let dirty = false;
+  c.ops.forEach(id => { seen[id] = 1; });
+  c.ids.forEach(id => { have[id] = 1; });
+  (Array.isArray(req.ops) ? req.ops : []).slice(0, 300).forEach(op => {
+    const id = String(op && op.id || '');
+    if (!id) return;
+    if (seen[id]) { ack[id] = 'ok'; return; }
+    seen[id] = 1; c.ops.push(id); dirty = true;
+    if (op.set !== undefined && op.set !== null) {
+      const v = Math.round(Number(op.set));
+      if (!isFinite(v) || Math.abs(v) > 1e11) { ack[id] = 'bad'; return; }
+      if (Number(op.seen) === c.ver) { c.base = v; c.ver++; ack[id] = 'ok'; } else ack[id] = 'stale';
+    } else {
+      const d = Math.round(Number(op.d));
+      if (!isFinite(d) || Math.abs(d) > 1e11) { ack[id] = 'bad'; return; }
+      c.base += d; c.ver++; ack[id] = 'ok';
+    }
+  });
+  (Array.isArray(req.ids) ? req.ids : []).slice(0, 5000).forEach(x => { const id = String(x); if (/^\d{1,20}$/.test(id) && !have[id]) { have[id] = 1; c.ids.push(id); dirty = true; } });
+  if (dirty) cashWrite_(cs, c);
+  return { base: c.base, ver: c.ver, ids: c.ids, ack: ack };
 }
 
 function owner_() {
@@ -204,7 +259,9 @@ function doPost(e) {
     } else if (cu > 0 && (req.cfg || cu > (Number(req.cfgKnown) || 0))) {
       cfg = { upd: cu, data: JSON.parse(cv[1][0] || '{}') };
     }
-    return out({ ok: true, rows: rows, cursor: now, cfg: cfg, cfgVer: cfgVer, sid: ss.getId(), url: ss.getUrl(), name: ss.getName(), owner: owner_() });
+    // Cash in Hand: only touched when the app sends it (v30 or newer); older apps never change it.
+    const cash = req.cash ? cash_(cs, req.cash) : null;
+    return out({ ok: true, rows: rows, cursor: now, cfg: cfg, cfgVer: cfgVer, cash: cash, sid: ss.getId(), url: ss.getUrl(), name: ss.getName(), owner: owner_() });
   } finally {
     lock.releaseLock();
   }
