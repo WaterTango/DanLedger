@@ -3932,8 +3932,13 @@ function updAmt() { golAmt(); const c = amtC(),
     el.classList.toggle('dim', !c);
     el.style.color = draft.type === 'income' && c ? moneyCol('inc') : '' } if (x) x.hidden = !c; const e = $('#err'); if (e) e.textContent = '' }
 
-function leftLine() { const a = inM(curKey),
-    l = sum(a, 'income') - sum(a, 'expense'); return '<div class="leftln"><span class="lbl">Left this month</span><b>' + (l < 0 ? '−' : '') + 'RM ' + fmt(Math.abs(l) / 100) + '</b></div>' }
+// #51: Left this month (Bank + Cash) + Bank | Cash rows. Static (refresh on re-render). inCard = Calculator card spacing.
+function leftLine(inCard) { const a = inM(curKey),
+    l = sum(a, 'income') - sum(a, 'expense'),
+    c = bcGet().cash,
+    w = 'flex-wrap:wrap;gap:2px 12px',
+    n = 'white-space:nowrap'; return '<div class="leftln" style="' + (inCard ? 'margin:0;' : '') + w + '"><span class="lbl" style="' + n + '">Left this month (Bank + Cash)</span><b style="' + n + ';margin-left:auto">' + (l < 0 ? '−' : '') + 'RM ' + fmt(Math.abs(l) / 100) + '</b></div>' +
+    '<div class="leftln" style="margin-top:' + (inCard ? 4 : 6) + 'px;' + w + '"><span class="lbl" style="' + n + '">Bank ' + bcMoney(l - c) + '</span><span class="lbl" style="' + n + ';margin-left:auto">Cash ' + bcMoney(c) + '</span></div>' }
 
 function longDate(d) { const p = d.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) }
 
@@ -5589,7 +5594,7 @@ function calcView() {
   const r = calc(cx),
     ex = /[+−×÷]/.test(cx.slice(1));
   const ks = ['C', '⌫', '÷', '×', '7', '8', '9', '−', '4', '5', '6', '+', '1', '2', '3', '=', '0', '.'];
-  return '<h1 class="ttl">Calculator</h1><div class="cd"><div class="ce">' + esc(cx || '0') + '</div><div class="cr2">' + (ex && r !== null ? '= ' + r.toLocaleString('en-MY', { maximumFractionDigits: 8 }) : '&nbsp;') + '</div></div><div class="cpad">' +
+  return '<h1 class="ttl">Calculator</h1><div style="margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--card)">' + leftLine(true) + '</div><div class="cd"><div class="ce">' + esc(cx || '0') + '</div><div class="cr2">' + (ex && r !== null ? '= ' + r.toLocaleString('en-MY', { maximumFractionDigits: 8 }) : '&nbsp;') + '</div></div><div class="cpad">' +
     ks.map(k => '<button data-a="ck" data-v="' + k + '" class="' + (k === '=' ? 'eq' : k === '0' ? 'z' : '') + '" aria-label="' + (k === '⌫' ? 'Backspace' : k) + '">' + k + '</button>').join('') +
     '</div><button class="pri" style="margin-top:12px" data-a="useamt">Use as amount</button>';
 }
@@ -5942,10 +5947,11 @@ function payChips() {
 let statsTab = 'overview',
   revShow = false;
 const DEMO_VER = 9;
-const APP_VER = 'v31'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
+const APP_VER = 'v32'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
 /* Changelog (#46): newest first, plain words, 1–5 bullets (most important first). Every release adds
  * its entry at the top; the What's new card reads CHANGELOG[0], so this is the one place to edit. */
 const CHANGELOG = [
+  { ver: 'v32', date: '2026-11-26', lines: ['Add and Calculator now show Left this month, Bank and Cash'] },
   { ver: 'v31', date: '2026-11-17', card: false, lines: ['Your Google account email is no longer shown in the app'] },
   { ver: 'v30', date: '2026-11-17', act: { label: 'Set cash', go: 'bankcash' }, lines: ['Cash in Hand is saved to your account and syncs across devices', 'Home shows Amount in Bank and Cash in Hand', 'Move money between Bank and Cash with one button', 'Set your cash once after this update'] },
   { ver: 'v29', date: '2026-11-16', card: false, lines: ['Quick add follows renamed or deleted categories', 'Long notes fit in the monthly review', 'Safe to spend easier to read in Classic light', 'Safer restore: damaged backups are checked first'] },
