@@ -1047,6 +1047,39 @@ body.demo main::before {
 .cpad .z {
   grid-column: span 2
 }
+.cdc { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; margin: 12px 0 }
+.cdc .cx { font-size: 20px; color: var(--mut); min-height: 26px; word-break: break-all }
+.cdc .cres { font-size: 40px; font-weight: 600; min-height: 48px; white-space: nowrap; overflow: hidden }
+.cdc .cres.s1 { font-size: 34px }
+.cdc .cres.s2 { font-size: 26px }
+.cdc .cres.s3 { font-size: 20px }
+.cpad.l1 { gap: 10px }
+.cpad.l1 button { height: 60px; border-radius: calc(var(--r) + 4px); font-weight: 500 }
+.cpad.l1 .op { background: color-mix(in srgb, var(--acc) 14%, var(--card)); color: var(--acc); border-color: transparent; font-size: 26px }
+.cpad.l1 .fn { color: var(--mut) }
+.cpad.l1 .eq { height: auto; background: var(--acc); color: var(--on); border-color: transparent; font-size: 28px }
+.gh { padding: 12px 4px 8px }
+.gt { font-size: 40px; font-weight: 600; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: clip }
+.gt.s1 { font-size: 34px }
+.gt.s2 { font-size: 28px }
+.gt.s3 { font-size: 22px }
+.gl { border: 1px solid var(--line); border-radius: calc(var(--r) + 4px); background: var(--card); overflow: hidden }
+.gr { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 0; border-bottom: 1px solid var(--line) }
+.gr:last-child { border-bottom: 0 }
+.gm { flex: 1; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 0 0 14px; text-align: left }
+.gn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.gm b { font-weight: 600; white-space: nowrap }
+.gx { width: 44px; height: 44px; min-height: 44px; border: 0; background: transparent; color: var(--mut); font-size: 20px; border-radius: calc(var(--r) + 4px) }
+.ge { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 110px) 56px; gap: 10px; margin-top: 12px }
+.ge input { min-width: 0 }
+.gp { height: 48px; border: 0; border-radius: calc(var(--r) + 4px); background: color-mix(in srgb, var(--acc) 14%, var(--card)); color: var(--acc); font-size: 26px; font-weight: 500 }
+.guse { margin-top: 12px; white-space: nowrap; overflow: hidden }
+.guse:disabled { opacity: .45; cursor: default }
+.gr.sel { background: color-mix(in srgb, var(--acc) 12%, var(--card)); box-shadow: inset 3px 0 0 var(--acc) }
+.ge.ged { grid-template-columns: minmax(0, 1fr) minmax(0, 96px) 76px }
+.gp.gs { background: var(--acc); color: var(--on); font-size: 16px; font-weight: 600 }
+.gc { display: flex; justify-content: flex-end; margin-top: 8px }
+.gem { padding: 14px; text-align: center; color: var(--mut) }
 textarea.n {
   resize: vertical
 }
@@ -3732,6 +3765,11 @@ try { bills = JSON.parse(localStorage.getItem(K('bills')) || '[]') } catch (e) {
 const saveB = () => touchCfg();
 let bd = null,
   cx = '',
+  ctab = 'calc', // Calculator tab: 'calc' | 'groc'
+  groc = [], // Groceries list, memory only: {id, n, c (cents)}
+  gseq = 1,
+  gedit = 0, // id of the line being edited, 0 = add mode
+  gdr = { n: '', p: '' }, // entry row text, kept across re-renders
   cdone = false,
   clearArm = false,
   editBud = null,
@@ -4580,6 +4618,7 @@ function render(keep) {
   if (!keep) window.scrollTo(0, 0);
   wnFit();
   if (view === 'add') catRowInit();
+  if (view === 'calc') fitNum();
   const dbN = document.getElementById('detbody');
   if (dbN) { suggest(draft.note || '');
     dbN.scrollTop = dbT;
@@ -5076,7 +5115,41 @@ document.addEventListener('click', e => {
       cx += (v === '.' && last === '') ? '0.' : v;
     }
     render(true);
+  } else if (a === 'ctab') { if (ctab !== v) { ctab = v;
+      render(true) }
+  } else if (a === 'gadd') { // + (add mode) or Save (edit mode)
+    const n = ($('#grn').value || '').trim(),
+      c = gCents($('#grp').value);
+    if (!c) { $('#grp').focus(); return }
+    const ed = groc.find(l => l.id === gedit);
+    if (ed) { ed.n = n;
+      ed.c = c } else groc.push({ id: gseq++, n: n, c: c });
+    gedit = 0;
+    gdr = { n: '', p: '' };
+    render(true); if (!ed) $('#grn').focus();
+  } else if (a === 'gedit') { const l = groc.find(x => x.id === +b.dataset.id); if (!l) return;
+    gedit = l.id;
+    gdr = { n: l.n, p: fmt(l.c / 100).replace(/,/g, '') };
+    render(true);
+  } else if (a === 'gcancel') { gedit = 0;
+    gdr = { n: '', p: '' };
+    render(true);
+  } else if (a === 'grm') { const id = +b.dataset.id,
+      i = groc.findIndex(x => x.id === id); if (i < 0) return;
+    const l = groc.splice(i, 1)[0]; if (gedit === id) { gedit = 0;
+      gdr = { n: '', p: '' } }
+    render(true);
+    toast('Item removed', () => { groc.splice(Math.min(i, groc.length), 0, l);
+      render(true) });
+  } else if (a === 'guse') { const t = gTotal(); if (!t) return;
+    draft.amt = String(t / 100);
+    groc = [];
+    gedit = 0;
+    gdr = { n: '', p: '' };
+    view = 'add';
+    render();
   } else if (a === 'opencalc') { view = 'calc';
+    ctab = 'calc';
     render() } else if (a === 'catmore') { catMore = !catMore;
     render(true) } else if (a === 'useamt') { const r = calc(cx); if (r === null || r <= 0) return;
     draft.amt = String(Math.round(r * 100) / 100);
@@ -5483,6 +5556,8 @@ document.addEventListener('click', e => {
 
 /* ===== INPUT HANDLER ===== */
 document.addEventListener('input', e => {
+  if (e.target.id === 'grn') gdr.n = e.target.value;
+  if (e.target.id === 'grp') gdr.p = e.target.value;
   if (e.target.id === 'itotal') { bd.itotal = e.target.value; const m = $('#isum'); if (m) m.textContent = instSum() }
   if (e.target.id === 'cname') catEd.name = e.target.value;
   if (e.target.id === 'clrin') { clrTxt = e.target.value;
@@ -5590,13 +5665,49 @@ function calc(s) {
   return isFinite(r) ? Math.round(r * 1e8) / 1e8 : null;
 }
 
+// #52: Groceries helpers. Prices are parsed from text to integer cents (no floats).
+function gCents(t) {
+  t = String(t).trim();
+  if (!/^(\d+\.?\d{0,2}|\.\d{1,2})$/.test(t)) return 0;
+  const p = t.split('.'),
+    c = (+p[0] || 0) * 100 + Math.round(+((p[1] || '') + '00').slice(0, 2));
+  return Number.isSafeInteger(c) && c > 0 ? c : 0;
+}
+const gTotal = () => groc.reduce((x, l) => x + l.c, 0);
+const gSz = (n, a, b, c) => n <= a ? '' : n <= b ? ' s1' : n <= c ? ' s2' : ' s3';
+
 function calcView() {
   const r = calc(cx),
     ex = /[+−×÷]/.test(cx.slice(1));
-  const ks = ['C', '⌫', '÷', '×', '7', '8', '9', '−', '4', '5', '6', '+', '1', '2', '3', '=', '0', '.'];
-  return '<h1 class="ttl">Calculator</h1><div style="margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--card)">' + leftLine(true) + '</div><div class="cd"><div class="ce">' + esc(cx || '0') + '</div><div class="cr2">' + (ex && r !== null ? '= ' + r.toLocaleString('en-MY', { maximumFractionDigits: 8 }) : '&nbsp;') + '</div></div><div class="cpad">' +
-    ks.map(k => '<button data-a="ck" data-v="' + k + '" class="' + (k === '=' ? 'eq' : k === '0' ? 'z' : '') + '" aria-label="' + (k === '⌫' ? 'Backspace' : k) + '">' + k + '</button>').join('') +
+  const card = '<div style="margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--card)">' + leftLine(true) + '</div>',
+    tabs = '<div class="utab" style="margin-top:12px"><button data-a="ctab" data-v="calc" aria-pressed="' + (ctab === 'calc') + '">Calculator</button><button data-a="ctab" data-v="groc" aria-pressed="' + (ctab === 'groc') + '">Groceries</button></div>';
+  let h = '<h1 class="ttl">Calculator</h1>' + card + tabs;
+  if (ctab === 'groc') {
+    const t = gTotal(),
+      ts = 'RM ' + fmt(t / 100),
+      ed = groc.find(l => l.id === gedit);
+    h += '<div class="cd gh"><div class="lbl">Total · ' + groc.length + (groc.length === 1 ? ' item' : ' items') + '</div><div class="gt' + gSz(ts.length, 9, 11, 13) + '">' + ts + '</div></div>' +
+      '<div class="gl">' + (groc.length ? groc.map(l => '<div class="gr' + (ed && ed.id === l.id ? ' sel' : '') + '"><button class="gm" data-a="gedit" data-id="' + l.id + '" aria-label="Edit ' + esc(l.n || 'Item') + '"><span class="gn">' + esc(l.n || 'Item') + '</span><b>' + fmt(l.c / 100) + '</b></button><button class="gx" data-a="grm" data-id="' + l.id + '" aria-label="Remove ' + esc(l.n || 'Item') + '">×</button></div>').join('') : '<div class="gem">No items yet</div>') + '</div>' +
+      '<div class="ge' + (ed ? ' ged' : '') + '"><input id="grn" placeholder="Item" aria-label="Item name" autocomplete="off" value="' + esc(gdr.n) + '"><input id="grp" placeholder="0.00" inputmode="decimal" aria-label="Price" autocomplete="off" value="' + esc(gdr.p) + '">' +
+      (ed ? '<button class="gp gs" data-a="gadd" aria-label="Save item">Save</button>' : '<button class="gp" data-a="gadd" aria-label="Add item">+</button>') + '</div>' +
+      (ed ? '<div class="gc"><button class="sec" style="min-height:44px" data-a="gcancel">Cancel</button></div>' : '') +
+      '<button class="pri guse" data-a="guse"' + (t ? '' : ' disabled') + '>Use ' + ts + '</button>';
+    return h;
+  }
+  const ks = ['C', '⌫', '÷', '×', '7', '8', '9', '−', '4', '5', '6', '+', '1', '2', '3', '=', '0', '.'],
+    rs = ex && r !== null ? '= ' + r.toLocaleString('en-MY', { maximumFractionDigits: 8 }) : '';
+  return h + '<div class="cd cdc"><div class="cx">' + esc(cx || '0') + '</div><div class="cres' + gSz(rs.length, 9, 11, 14) + '">' + (rs || '&nbsp;') + '</div></div><div class="cpad l1">' +
+    ks.map(k => '<button data-a="ck" data-v="' + k + '" class="' + (k === '=' ? 'eq' : k === '0' ? 'z' : '÷×−+'.includes(k) ? 'op' : k === 'C' || k === '⌫' ? 'fn' : '') + '" aria-label="' + (k === '⌫' ? 'Backspace' : k) + '">' + k + '</button>').join('') +
     '</div><button class="pri" style="margin-top:12px" data-a="useamt">Use as amount</button>';
+}
+
+// Never clip the big numbers: shrink until they fit (320px, long values).
+function fitNum() {
+  document.querySelectorAll('.cres, .gt').forEach(el => {
+    let f = parseFloat(getComputedStyle(el).fontSize);
+    while (el.scrollWidth > el.clientWidth + 1 && f > 12) { f -= 1;
+      el.style.fontSize = f + 'px' }
+  });
 }
 
 /* ===== SORTING ===== */
@@ -5947,10 +6058,11 @@ function payChips() {
 let statsTab = 'overview',
   revShow = false;
 const DEMO_VER = 9;
-const APP_VER = 'v32'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
+const APP_VER = 'v33'; // keep in step with sw.js cache ledger-vN and CHANGELOG[0]
 /* Changelog (#46): newest first, plain words, 1–5 bullets (most important first). Every release adds
  * its entry at the top; the What's new card reads CHANGELOG[0], so this is the one place to edit. */
 const CHANGELOG = [
+  { ver: 'v33', date: '2026-11-27', lines: ['Calculator has a Groceries tab: add items, tap one to fix it, use the total as the amount', 'Calculator looks refreshed'] },
   { ver: 'v32', date: '2026-11-26', lines: ['Add and Calculator now show Left this month, Bank and Cash'] },
   { ver: 'v31', date: '2026-11-17', card: false, lines: ['Your Google account email is no longer shown in the app'] },
   { ver: 'v30', date: '2026-11-17', act: { label: 'Set cash', go: 'bankcash' }, lines: ['Cash in Hand is saved to your account and syncs across devices', 'Home shows Amount in Bank and Cash in Hand', 'Move money between Bank and Cash with one button', 'Set your cash once after this update'] },
@@ -6642,6 +6754,7 @@ function hashConnect() {
  * focused fields inside #detbody scroll into view. */
 document.addEventListener('visibilitychange', () => { if (document.hidden) closeOverlays() });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'clrin') e.preventDefault() });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'grp') { e.preventDefault(); const b = document.querySelector('[data-a="gadd"]'); if (b) b.click() } });
 
 function vvFit() { const w = document.getElementById('detsheet'); if (!w) return; const vv = window.visualViewport; if (!vv) { w.style.removeProperty('--vvh'); return } const kb = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
   w.style.bottom = kb + 'px';
